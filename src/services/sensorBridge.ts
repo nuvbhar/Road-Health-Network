@@ -22,6 +22,20 @@ export function requestSensorAccess(): Promise<boolean> {
 export function startSensorStream(onReading: (r: SensorReading) => void): () => void {
   let lastCall = 0;
   const throttleMs = 33; // ~30Hz
+  
+  let currentSpeed: number | null = null;
+  let watchId: number | null = null;
+
+  if ('geolocation' in navigator) {
+    watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        // speed is in meters per second
+        currentSpeed = pos.coords.speed;
+      },
+      () => {}, // ignore errors for now
+      { enableHighAccuracy: true }
+    );
+  }
 
   const handleMotion = (event: DeviceMotionEvent) => {
     const now = performance.now();
@@ -46,6 +60,9 @@ export function startSensorStream(onReading: (r: SensorReading) => void): () => 
         x: rot?.alpha || 0,
         y: rot?.beta || 0,
         z: rot?.gamma || 0
+      },
+      gps: {
+        speed: currentSpeed
       }
     });
   };
@@ -54,5 +71,6 @@ export function startSensorStream(onReading: (r: SensorReading) => void): () => 
   
   return () => {
     window.removeEventListener('devicemotion', handleMotion);
+    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
   };
 }

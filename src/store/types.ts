@@ -56,8 +56,19 @@ export interface TrendDataPoint {
 }
 
 export interface SensorReading {
-  accelerometer: { x: number; y: number; z: number };
-  gyroscope: { x: number; y: number; z: number };
+  accelerometer: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  gyroscope: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  gps?: {
+    speed: number | null; // meters per second
+  };
 }
 
 export interface EngineMetrics {

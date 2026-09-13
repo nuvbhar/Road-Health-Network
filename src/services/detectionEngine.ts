@@ -18,6 +18,7 @@ const VARIANCE_SMOOTHING = 0.05;
 // Context snapshots for SNR
 let triggerMean = 0;
 let triggerStdDev = 0;
+let triggerSpeed: number | null = null;
 
 export function processSensorReading(
   reading: SensorReading, 
@@ -25,23 +26,37 @@ export function processSensorReading(
   onMetrics?: (metrics: any) => void
 ) {
   const rawZ = reading.accelerometer.z;
+  const currentSpeed = reading.gps?.speed || null;
   
+  // Basic gyroscope handling: if the phone is tumbling wildly, abort processing
+  const isTumbling = 
+    Math.abs(reading.gyroscope.x) > 2.5 || 
+    Math.abs(reading.gyroscope.y) > 2.5 || 
+    Math.abs(reading.gyroscope.z) > 2.5;
+
   // 1. Maintain Rolling Window
   zBuffer.push(rawZ);
   if (zBuffer.length > WINDOW_SIZE) {
     zBuffer.shift();
   }
 
-  // Need a full buffer to establish a solid baseline
-  if (zBuffer.length < WINDOW_SIZE) return;
+  if (zBuffer.length < WINDOW_SIZE || isTumbling) return;
 
   // 2. Calculate Context (Rolling Mean & Variance)
   const meanZ = zBuffer.reduce((sum, val) => sum + val, 0) / zBuffer.length;
   const variance = zBuffer.reduce((sum, val) => sum + Math.pow(val - meanZ, 2), 0) / zBuffer.length;
   const stdDev = Math.sqrt(variance);
 
-  // Absolute force of the current spike
   const zForce = Math.abs(rawZ - meanZ);
+  
+  // 3. Dynamic Threshold based on speed
+  // A bump at 30 m/s (108 km/h) creates much higher g-force than at 5 m/s (18 km/h).
+  // We dynamically raise the absolute threshold if the vehicle is moving fast.
+  let dynamicThreshold = ABSOLUTE_THRESHOLD;
+  if (currentSpeed && currentSpeed > 15) {
+    dynamicThreshold += (currentSpeed - 15) * 0.05; 
+  }
+
   const snr = zForce / (stdDev + VARIANCE_SMOOTHING);
 
   // Emit debug metrics to UI
@@ -53,16 +68,12 @@ export function processSensorReading(
   // STATE: IDLE -> Check for threshold breaches
   // ---------------------------------------------------------
   if (engineState === 'IDLE') {
-    if (zForce > ABSOLUTE_THRESHOLD && snr > 3.0) {
-      // Threshold breached! Begin capturing the full waveform window.
+    if (zForce > dynamicThreshold && snr > 3.0) {
       engineState = 'CAPTURING';
-      
-      // Seed buffer with the last 5 frames (pre-impact context)
       captureBuffer = zBuffer.slice(-5);
-      
-      // Snapshot the road noise *before* the spike corrupts it
       triggerMean = meanZ;
       triggerStdDev = stdDev;
+      triggerSpeed = currentSpeed;
     }
   } 
   // ---------------------------------------------------------
@@ -71,9 +82,8 @@ export function processSensorReading(
   else if (engineState === 'CAPTURING') {
     captureBuffer.push(rawZ);
     
-    // Once we have collected 500ms of future data...
     if (captureBuffer.length >= 5 + CAPTURE_FRAMES) {
-      // 3. WAVEFORM WINDOW ANALYSIS (Feature Extraction)
+      // 4. WAVEFORM WINDOW ANALYSIS
       let minZ = Infinity;
       let maxZ = -Infinity;
       let idxMin = 0;
@@ -88,23 +98,38 @@ export function processSensorReading(
       const maxDeviation = Math.max(Math.abs(maxZ - triggerMean), Math.abs(minZ - triggerMean));
       const windowSnr = maxDeviation / (triggerStdDev + VARIANCE_SMOOTHING);
       
-      // 4. CLASSIFICATION (Sequence Timing)
-      // Pothole: Minimum (Drop) occurs BEFORE Maximum (Strike)
-      // Speed Bump: Maximum (Ramp) occurs BEFORE Minimum (Landing)
-      const isPothole = idxMin < idxMax;
+      // Feature: Symmetry Ratio (Speed bumps are highly symmetric ~ 0.8-1.2, potholes vary wildly)
+      const dropDepth = Math.abs(minZ - triggerMean);
+      const strikeHeight = Math.abs(maxZ - triggerMean);
+      const symmetryRatio = strikeHeight > 0 ? dropDepth / strikeHeight : 1;
       
+      // 5. CLASSIFICATION (Sequence Timing + Symmetry)
       let type: string;
-      if (isPothole) {
+      const isPotholeSequence = idxMin < idxMax;
+      
+      if (isPotholeSequence) {
         // High Peak-to-Peak amplitude indicates a severe crater
         type = peakToPeak > 3.5 ? 'SEVERE_POTHOLE' : 'POTENTIAL_POTHOLE';
       } else {
+        // If it looks like a speedbump but is extremely asymmetric (< 0.2 or > 5.0), 
+        // it might just be bad noise or a protruding rock, but we'll still call it 
+        // a speed bump with a logged warning for ML extraction later.
+        if (symmetryRatio < 0.2 || symmetryRatio > 5.0) {
+          console.debug('[Engine] Asymmetric bump detected. Ratio:', symmetryRatio);
+        }
         type = 'SPEED_BUMP';
       }
       
-      // 5. CONFIDENCE SCORING
+      // 6. CONFIDENCE SCORING (w/ Speed Normalisation)
       let confidence = Math.min(98, Math.floor(40 + ((windowSnr - 3.0) * 12)));
-      // Massive kinetic energy (Peak-to-Peak) boosts confidence
+      
       if (peakToPeak > 3.0) confidence = Math.min(99, confidence + 10);
+      
+      // Speed Modifier: High speeds make hits larger, so if we get a massive hit 
+      // at low speed, confidence in severity skyrockets.
+      if (triggerSpeed !== null && triggerSpeed < 10 && peakToPeak > 2.5) {
+        confidence = Math.min(99, confidence + 15);
+      }
       
       const weight = parseFloat(peakToPeak.toFixed(2));
       
@@ -116,7 +141,6 @@ export function processSensorReading(
         timestamp: Date.now()
       });
       
-      // 6. COOLDOWN -> Prevent double-counting the suspension rebound ringing
       engineState = 'COOLDOWN';
       setTimeout(() => {
         engineState = 'IDLE';
