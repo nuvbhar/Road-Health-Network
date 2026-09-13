@@ -3,12 +3,21 @@ import { SensorReading, RoadEvent } from '../store/types';
 // Configuration for Contextual Anomaly Detection
 const WINDOW_SIZE = 40; // Represents recent history (approx 1-2 seconds of data)
 const zBuffer: number[] = [];
-let cooldown = false;
 
-// Minimum absolute G-force deviation required to even consider it a pothole
+// State Machine for Waveform Window Capture
+type EngineState = 'IDLE' | 'CAPTURING' | 'COOLDOWN';
+let engineState: EngineState = 'IDLE';
+
+let captureBuffer: number[] = [];
+const CAPTURE_FRAMES = 15; // ~500ms at 30Hz
+
+// Minimum absolute G-force deviation required to even consider it an anomaly
 const ABSOLUTE_THRESHOLD = 0.8; 
-// Prevents division by zero on perfectly smooth surfaces
 const VARIANCE_SMOOTHING = 0.05; 
+
+// Context snapshots for SNR
+let triggerMean = 0;
+let triggerStdDev = 0;
 
 export function processSensorReading(
   reading: SensorReading, 
@@ -33,50 +42,71 @@ export function processSensorReading(
 
   // Absolute force of the current spike
   const zForce = Math.abs(rawZ - meanZ);
-  
-  // 3. Calculate Signal-to-Noise Ratio (Z-Score)
   const snr = zForce / (stdDev + VARIANCE_SMOOTHING);
 
   // Emit debug metrics to UI
   if (onMetrics) {
-    onMetrics({
-      rawZ,
-      meanZ,
-      stdDev,
-      zForce,
-      snr,
-      threshold: 3.0
-    });
+    onMetrics({ rawZ, meanZ, stdDev, zForce, snr, threshold: 3.0 });
   }
 
-  if (zForce > ABSOLUTE_THRESHOLD && !cooldown) {
-    // 4. Contextual Logic & Classification
-    // If SNR > 3.0, the spike stands out clearly from the background noise.
-    if (snr > 3.0) {
-      cooldown = true;
+  // ---------------------------------------------------------
+  // STATE: IDLE -> Check for threshold breaches
+  // ---------------------------------------------------------
+  if (engineState === 'IDLE') {
+    if (zForce > ABSOLUTE_THRESHOLD && snr > 3.0) {
+      // Threshold breached! Begin capturing the full waveform window.
+      engineState = 'CAPTURING';
       
-      // Determine Classification based on the direction of the initial breakout:
-      // - If Z drops below the mean first, the tire is falling into a void -> POTHOLE
-      // - If Z shoots above the mean first, the tire is hitting a ramp -> SPEED_BUMP
-      const isNegativeSpike = rawZ < meanZ;
+      // Seed buffer with the last 5 frames (pre-impact context)
+      captureBuffer = zBuffer.slice(-5);
+      
+      // Snapshot the road noise *before* the spike corrupts it
+      triggerMean = meanZ;
+      triggerStdDev = stdDev;
+    }
+  } 
+  // ---------------------------------------------------------
+  // STATE: CAPTURING -> Accumulate the waveform
+  // ---------------------------------------------------------
+  else if (engineState === 'CAPTURING') {
+    captureBuffer.push(rawZ);
+    
+    // Once we have collected 500ms of future data...
+    if (captureBuffer.length >= 5 + CAPTURE_FRAMES) {
+      // 3. WAVEFORM WINDOW ANALYSIS (Feature Extraction)
+      let minZ = Infinity;
+      let maxZ = -Infinity;
+      let idxMin = 0;
+      let idxMax = 0;
+      
+      captureBuffer.forEach((z, idx) => {
+        if (z < minZ) { minZ = z; idxMin = idx; }
+        if (z > maxZ) { maxZ = z; idxMax = idx; }
+      });
+      
+      const peakToPeak = maxZ - minZ;
+      const maxDeviation = Math.max(Math.abs(maxZ - triggerMean), Math.abs(minZ - triggerMean));
+      const windowSnr = maxDeviation / (triggerStdDev + VARIANCE_SMOOTHING);
+      
+      // 4. CLASSIFICATION (Sequence Timing)
+      // Pothole: Minimum (Drop) occurs BEFORE Maximum (Strike)
+      // Speed Bump: Maximum (Ramp) occurs BEFORE Minimum (Landing)
+      const isPothole = idxMin < idxMax;
+      
       let type: string;
-      
-      if (isNegativeSpike) {
-        // It's a pothole. Check severity.
-        type = zForce > 2.5 ? 'SEVERE_POTHOLE' : 'POTENTIAL_POTHOLE';
+      if (isPothole) {
+        // High Peak-to-Peak amplitude indicates a severe crater
+        type = peakToPeak > 3.5 ? 'SEVERE_POTHOLE' : 'POTENTIAL_POTHOLE';
       } else {
-        // Positive spike first.
         type = 'SPEED_BUMP';
       }
-
-      // Map SNR dynamically to a Confidence %
-      // snr=3.0 -> ~40%, snr=8.0+ -> ~98%
-      let confidence = Math.min(98, Math.floor(40 + ((snr - 3.0) * 12)));
       
-      // Boost confidence if the sheer physical force is massive
-      if (zForce > 2.0) confidence = Math.min(99, confidence + 10);
+      // 5. CONFIDENCE SCORING
+      let confidence = Math.min(98, Math.floor(40 + ((windowSnr - 3.0) * 12)));
+      // Massive kinetic energy (Peak-to-Peak) boosts confidence
+      if (peakToPeak > 3.0) confidence = Math.min(99, confidence + 10);
       
-      const weight = parseFloat(zForce.toFixed(2));
+      const weight = parseFloat(peakToPeak.toFixed(2));
       
       onEvent({
         detected: true,
@@ -86,10 +116,11 @@ export function processSensorReading(
         timestamp: Date.now()
       });
       
-      // Cooldown prevents double-counting the rebound/landing of the same event
+      // 6. COOLDOWN -> Prevent double-counting the suspension rebound ringing
+      engineState = 'COOLDOWN';
       setTimeout(() => {
-        cooldown = false;
-      }, 2500);
+        engineState = 'IDLE';
+      }, 2000);
     }
   }
 }
