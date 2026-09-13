@@ -14,7 +14,7 @@ export interface Sector {
   };
 }
 
-export type ReportType = "POTENTIAL_POTHOLE" | "SEVERE_POTHOLE" | "SPEED_BUMP";
+export type ReportType = "POTENTIAL_POTHOLE" | "SEVERE_POTHOLE";
 
 export interface Report {
   id: string;

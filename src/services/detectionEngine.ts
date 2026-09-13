@@ -57,13 +57,15 @@ async function classifyEvent(sequence: number[], peakToPeak: number, windowSnr: 
       console.debug(`[Engine] AI classified event as noise (prob: ${pNoise.toFixed(2)}). Emitting anyway for debug.`);
     }
 
-    type = pPothole > pSpeedbump ? "POTENTIAL_POTHOLE" : "SPEED_BUMP";
-    if (type === "POTENTIAL_POTHOLE" && peakToPeak > 3.5) {
-      type = "SEVERE_POTHOLE";
+    if (pSpeedbump > pPothole) {
+      console.debug(`[Engine] Ignored Speed Bump (prob: ${pSpeedbump.toFixed(2)})`);
+      return;
     }
 
-    aiConfidenceBonus = Math.floor(Math.max(pPothole, pSpeedbump) * 10) - 5;
-    console.debug(`[Engine] AI Classification: ${type} (Confidence: ${Math.max(pPothole, pSpeedbump).toFixed(2)})`);
+    type = peakToPeak > 3.5 ? "SEVERE_POTHOLE" : "POTENTIAL_POTHOLE";
+
+    aiConfidenceBonus = Math.floor(pPothole * 10) - 5;
+    console.debug(`[Engine] AI Classification: ${type} (Confidence: ${pPothole.toFixed(2)})`);
   } else {
     // --- STAGE 1.5: HEURISTIC FALLBACK ---
     let minZ = Infinity, maxZ = -Infinity;
@@ -74,19 +76,13 @@ async function classifyEvent(sequence: number[], peakToPeak: number, windowSnr: 
       if (z > maxZ) { maxZ = z; idxMax = idx; }
     });
 
-    const dropDepth = Math.abs(minZ - triggerMean);
-    const strikeHeight = Math.abs(maxZ - triggerMean);
-    const symmetryRatio = strikeHeight > 0 ? dropDepth / strikeHeight : 1;
-
     const isPotholeSequence = idxMin < idxMax;
     
     if (isPotholeSequence) {
       type = peakToPeak > 3.5 ? "SEVERE_POTHOLE" : "POTENTIAL_POTHOLE";
     } else {
-      if (symmetryRatio < 0.2 || symmetryRatio > 5.0) {
-        console.debug("[Engine] Asymmetric bump detected. Ratio:", symmetryRatio);
-      }
-      type = "SPEED_BUMP";
+      console.debug("[Engine] Ignored heuristic Speed Bump.");
+      return;
     }
   }
 
