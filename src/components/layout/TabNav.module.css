@@ -9,7 +9,8 @@
   height: 100%;
 }
 
-.link, .active {
+.link,
+.active {
   display: flex;
   align-items: center;
   height: 100%;
@@ -20,7 +21,9 @@
   letter-spacing: 0.04em;
   color: rgba(255, 255, 255, 0.7);
   border-bottom: 3px solid transparent;
-  transition: color 200ms ease, border-color 200ms ease;
+  transition:
+    color 200ms ease,
+    border-color 200ms ease;
   padding-top: 3px; /* visual balance for bottom border */
 }
 

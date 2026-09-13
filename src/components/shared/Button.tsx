@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
-import styles from './Button.module.css';
+import React, { useState } from "react";
+import styles from "./Button.module.css";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'filter';
+  variant?: "primary" | "secondary" | "danger" | "ghost" | "filter";
   isActiveFilter?: boolean;
 }
 
 export const Button: React.FC<ButtonProps> = ({
-  variant = 'primary',
+  variant = "primary",
   isActiveFilter = false,
   children,
-  className = '',
+  className = "",
   disabled,
   ...props
 }) => {
@@ -20,18 +20,23 @@ export const Button: React.FC<ButtonProps> = ({
   const classes = [
     styles.button,
     styles[variant],
-    isHovered && !disabled ? styles.hover : '',
-    isActive && !disabled ? styles.active : '',
-    isActiveFilter ? styles.activeFilter : '',
-    className
-  ].filter(Boolean).join(' ');
+    isHovered && !disabled ? styles.hover : "",
+    isActive && !disabled ? styles.active : "",
+    isActiveFilter ? styles.activeFilter : "",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <button
       className={classes}
       disabled={disabled}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => { setIsHovered(false); setIsActive(false); }}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        setIsActive(false);
+      }}
       onMouseDown={() => setIsActive(true)}
       onMouseUp={() => setIsActive(false)}
       {...props}

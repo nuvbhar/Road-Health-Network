@@ -5,7 +5,10 @@
   border-radius: var(--radius-md);
   font-family: inherit;
   cursor: pointer;
-  transition: transform 100ms ease, background-color 200ms ease, border-color 200ms ease;
+  transition:
+    transform 100ms ease,
+    background-color 200ms ease,
+    border-color 200ms ease;
 }
 
 .button:focus-visible {
@@ -30,8 +33,12 @@
   min-height: 44px;
   min-width: 120px;
 }
-.primary.hover { background-color: var(--accent-hover); }
-.primary.active { transform: scale(0.98); }
+.primary.hover {
+  background-color: var(--accent-hover);
+}
+.primary.active {
+  transform: scale(0.98);
+}
 
 /* Secondary */
 .secondary {
@@ -47,7 +54,9 @@
   background-color: var(--bg-elevated);
   border-color: var(--border-strong);
 }
-.secondary.active { transform: scale(0.98); }
+.secondary.active {
+  transform: scale(0.98);
+}
 
 /* Danger */
 .danger {
@@ -58,14 +67,14 @@
   font-size: var(--type-caption);
   min-height: 44px;
 }
-.danger.hover { 
-  background-color: var(--colour-danger); 
+.danger.hover {
+  background-color: var(--colour-danger);
   color: var(--text-inverse);
 }
-.danger.active { 
+.danger.active {
   background-color: #d11f26; /* Darker red */
   color: var(--text-inverse);
-  transform: scale(0.96); 
+  transform: scale(0.96);
 }
 
 /* Filter Pill */
@@ -78,7 +87,9 @@
   font-weight: 600;
   padding: var(--space-2) var(--space-4);
 }
-.filter.hover { background-color: var(--bg-elevated); }
+.filter.hover {
+  background-color: var(--bg-elevated);
+}
 .filter.activeFilter {
   background-color: var(--accent-light);
   border-color: var(--accent);

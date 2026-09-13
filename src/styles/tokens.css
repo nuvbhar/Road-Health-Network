@@ -1,49 +1,49 @@
 :root {
   /* 2.1 Background Layers */
-  --bg-page: #F8FAFC;
-  --bg-surface: #FFFFFF;
-  --bg-elevated: #F1F5F9;
-  --bg-inset: #E2E8F0;
-  --bg-header: #1E293B;
-  --bg-header-accent: #0F172A;
+  --bg-page: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f1f5f9;
+  --bg-inset: #e2e8f0;
+  --bg-header: #1e293b;
+  --bg-header-accent: #0f172a;
 
   /* 2.2 Text Hierarchy */
-  --text-primary: #0F172A;
+  --text-primary: #0f172a;
   --text-secondary: #475569;
-  --text-muted: #94A3B8;
-  --text-inverse: #FFFFFF;
-  --text-link: #2563EB;
+  --text-muted: #94a3b8;
+  --text-inverse: #ffffff;
+  --text-link: #2563eb;
 
   /* 2.3 Semantic Colours */
-  --colour-ok: #16A34A;
-  --colour-ok-light: #DCFCE7;
-  --colour-ok-border: #86EFAC;
-  --colour-warning: #D97706;
-  --colour-warning-light: #FEF3C7;
-  --colour-warning-border: #FCD34D;
-  --colour-danger: #DC2626;
-  --colour-danger-light: #FEE2E2;
-  --colour-danger-border: #FCA5A5;
-  --colour-info: #2563EB;
-  --colour-info-light: #DBEAFE;
-  --colour-info-border: #93C5FD;
+  --colour-ok: #16a34a;
+  --colour-ok-light: #dcfce7;
+  --colour-ok-border: #86efac;
+  --colour-warning: #d97706;
+  --colour-warning-light: #fef3c7;
+  --colour-warning-border: #fcd34d;
+  --colour-danger: #dc2626;
+  --colour-danger-light: #fee2e2;
+  --colour-danger-border: #fca5a5;
+  --colour-info: #2563eb;
+  --colour-info-light: #dbeafe;
+  --colour-info-border: #93c5fd;
 
   /* 2.4 Chart / Graph Colours */
-  --graph-line: #3B82F6;
-  --graph-line-alert: #D97706;
-  --graph-grid: #E2E8F0;
+  --graph-line: #3b82f6;
+  --graph-line-alert: #d97706;
+  --graph-grid: #e2e8f0;
   --graph-fill: rgba(59, 130, 246, 0.08);
   --graph-fill-alert: rgba(217, 119, 6, 0.08);
 
   /* 2.5 Accent / Brand */
-  --accent: #2563EB;
-  --accent-hover: #1D4ED8;
-  --accent-light: #EFF6FF;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-light: #eff6ff;
 
   /* 2.6 Borders & Dividers */
-  --border-light: #E2E8F0;
-  --border-default: #CBD5E1;
-  --border-strong: #94A3B8;
+  --border-light: #e2e8f0;
+  --border-default: #cbd5e1;
+  --border-strong: #94a3b8;
 
   /* 3.2 Type Scale */
   --type-display: clamp(1.5rem, 2vw, 1.875rem);

@@ -1,8 +1,8 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { TabNav } from './TabNav';
-import { ActivityIcon } from '../shared/Icons';
-import styles from './Header.module.css';
+import React from "react";
+import { NavLink } from "react-router-dom";
+import { TabNav } from "./TabNav";
+import { ActivityIcon } from "../shared/Icons";
+import styles from "./Header.module.css";
 
 export const Header: React.FC = () => {
   return (
@@ -17,9 +17,11 @@ export const Header: React.FC = () => {
         <TabNav />
       </div>
       <div className={styles.right}>
-        <NavLink 
-          to="/live-sensor" 
-          className={({ isActive }) => `${styles.debugLink} ${isActive ? styles.active : ''}`}
+        <NavLink
+          to="/live-sensor"
+          className={({ isActive }) =>
+            `${styles.debugLink} ${isActive ? styles.active : ""}`
+          }
           title="Debug Live Sensor"
         >
           <ActivityIcon width={20} height={20} />

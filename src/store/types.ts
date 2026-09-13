@@ -2,17 +2,19 @@ export interface Sector {
   id: string;
   name: string;
   displayName: string;
-  status: 'normal' | 'caution' | 'defect';
+  status: "normal" | "caution" | "defect";
   reportCount: number;
   lastReportAt: string;
   confidence: number;
-  bounds: { startLat: number; startLng: number; endLat: number; endLng: number };
+  bounds: {
+    startLat: number;
+    startLng: number;
+    endLat: number;
+    endLng: number;
+  };
 }
 
-export type ReportType =
-  | 'POTENTIAL_POTHOLE'
-  | 'SEVERE_POTHOLE'
-  | 'SPEED_BUMP';
+export type ReportType = "POTENTIAL_POTHOLE" | "SEVERE_POTHOLE" | "SPEED_BUMP";
 
 export interface Report {
   id: string;
@@ -23,10 +25,10 @@ export interface Report {
   type: ReportType;
   confidence: number;
   weight?: number;
-  source: 'VEHICLE_SENSOR';
+  source: "VEHICLE_SENSOR";
   vehicleRef: string;
   rawDataShared: boolean;
-  status: 'pending' | 'under_review' | 'resolved';
+  status: "pending" | "under_review" | "resolved";
   independentReports: number;
   latitude: number;
   longitude: number;
@@ -36,7 +38,7 @@ export interface Report {
 export interface Vehicle {
   id: string;
   sectorId: string;
-  status: 'active' | 'idle' | 'offline';
+  status: "active" | "idle" | "offline";
   reportsToday: number;
   lastSeenAt: string;
 }

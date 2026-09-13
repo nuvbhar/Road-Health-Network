@@ -1,8 +1,12 @@
-import Database from 'better-sqlite3';
-import path from 'path';
-import { mockSectors, mockReports, mockVehicles } from '../src/services/mockData';
+import Database from "better-sqlite3";
+import path from "path";
+import {
+  mockSectors,
+  mockReports,
+  mockVehicles,
+} from "../src/services/mockData";
 
-const dbPath = path.resolve(process.cwd(), 'server', 'road-health.db');
+const dbPath = path.resolve(process.cwd(), "server", "road-health.db");
 export const db = new Database(dbPath);
 
 // Create tables
@@ -53,37 +57,41 @@ db.exec(`
 `);
 
 // Seed data if empty
-const count = db.prepare('SELECT COUNT(*) as c FROM sectors').get() as { c: number };
+const count = db.prepare("SELECT COUNT(*) as c FROM sectors").get() as {
+  c: number;
+};
 if (count.c === 0) {
-  console.log('Seeding initial data...');
-  
+  console.log("Seeding initial data...");
+
   const insertSector = db.prepare(`
     INSERT INTO sectors (id, name, displayName, status, reportCount, confidence, startLat, startLng, endLat, endLng, lastReportAt)
     VALUES (@id, @name, @displayName, @status, @reportCount, @confidence, @startLat, @startLng, @endLat, @endLng, @lastReportAt)
   `);
-  mockSectors.forEach(s => insertSector.run({
-    ...s,
-    startLat: s.bounds.startLat,
-    startLng: s.bounds.startLng,
-    endLat: s.bounds.endLat,
-    endLng: s.bounds.endLng,
-  }));
+  mockSectors.forEach((s) =>
+    insertSector.run({
+      ...s,
+      startLat: s.bounds.startLat,
+      startLng: s.bounds.startLng,
+      endLat: s.bounds.endLat,
+      endLng: s.bounds.endLng,
+    }),
+  );
 
   const insertReport = db.prepare(`
     INSERT INTO reports (id, reportDate, sectorId, sectorName, roadReference, type, confidence, weight, source, vehicleRef, rawDataShared, status, latitude, longitude, independentReports)
     VALUES (@id, @reportDate, @sectorId, @sectorName, @roadReference, @type, @confidence, @weight, @source, @vehicleRef, @rawDataShared, @status, @latitude, @longitude, @independentReports)
   `);
-  
+
   const insertReportVehicle = db.prepare(`
     INSERT INTO report_vehicles (reportId, vehicleRef) VALUES (?, ?)
   `);
 
-  mockReports.forEach(r => {
+  mockReports.forEach((r) => {
     insertReport.run({
       ...r,
-      rawDataShared: r.rawDataShared ? 1 : 0
+      rawDataShared: r.rawDataShared ? 1 : 0,
     });
-    r.reportingVehicles.forEach(v => {
+    r.reportingVehicles.forEach((v) => {
       insertReportVehicle.run(r.id, v);
     });
   });
@@ -92,6 +100,6 @@ if (count.c === 0) {
     INSERT INTO vehicles (id, sectorId, status, reportsToday, lastSeenAt)
     VALUES (@id, @sectorId, @status, @reportsToday, @lastSeenAt)
   `);
-  mockVehicles.forEach(v => insertVehicle.run(v));
-  console.log('Seeding complete.');
+  mockVehicles.forEach((v) => insertVehicle.run(v));
+  console.log("Seeding complete.");
 }

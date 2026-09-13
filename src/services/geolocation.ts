@@ -1,11 +1,14 @@
-export async function getCurrentPosition(): Promise<{ latitude: number, longitude: number }> {
+export async function getCurrentPosition(): Promise<{
+  latitude: number;
+  longitude: number;
+}> {
   return new Promise((resolve) => {
     if (!navigator.geolocation) {
       // Fallback
       resolve({ latitude: 30.758, longitude: 76.608 });
       return;
     }
-    
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         // Coarsen to 3 decimal places (~100m precision) for privacy
@@ -17,7 +20,7 @@ export async function getCurrentPosition(): Promise<{ latitude: number, longitud
         // Fallback
         resolve({ latitude: 30.758, longitude: 76.608 });
       },
-      { enableHighAccuracy: false, maximumAge: 10000, timeout: 5000 }
+      { enableHighAccuracy: false, maximumAge: 10000, timeout: 5000 },
     );
   });
 }

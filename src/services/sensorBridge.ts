@@ -1,11 +1,15 @@
-import { SensorReading } from '../store/types';
+import { SensorReading } from "../store/types";
 
 export function requestSensorAccess(): Promise<boolean> {
   return new Promise((resolve) => {
-    if (typeof (DeviceMotionEvent as any) !== 'undefined' && typeof (DeviceMotionEvent as any).requestPermission === 'function') {
-      (DeviceMotionEvent as any).requestPermission()
+    if (
+      typeof (DeviceMotionEvent as any) !== "undefined" &&
+      typeof (DeviceMotionEvent as any).requestPermission === "function"
+    ) {
+      (DeviceMotionEvent as any)
+        .requestPermission()
         .then((permissionState: string) => {
-          if (permissionState === 'granted') {
+          if (permissionState === "granted") {
             resolve(true);
           } else {
             resolve(false);
@@ -19,21 +23,23 @@ export function requestSensorAccess(): Promise<boolean> {
   });
 }
 
-export function startSensorStream(onReading: (r: SensorReading) => void): () => void {
+export function startSensorStream(
+  onReading: (r: SensorReading) => void,
+): () => void {
   let lastCall = 0;
   const throttleMs = 33; // ~30Hz
-  
+
   let currentSpeed: number | null = null;
   let watchId: number | null = null;
 
-  if ('geolocation' in navigator) {
+  if ("geolocation" in navigator) {
     watchId = navigator.geolocation.watchPosition(
       (pos) => {
         // speed is in meters per second
         currentSpeed = pos.coords.speed;
       },
       () => {}, // ignore errors for now
-      { enableHighAccuracy: true }
+      { enableHighAccuracy: true },
     );
   }
 
@@ -45,8 +51,8 @@ export function startSensorStream(onReading: (r: SensorReading) => void): () => 
     // Normalise to g-force if not already
     const acc = event.accelerationIncludingGravity || event.acceleration;
     if (!acc) return;
-    
-    // For iOS, rotationRate is typically in degrees, Android is sometimes radians. 
+
+    // For iOS, rotationRate is typically in degrees, Android is sometimes radians.
     // This is a prototype so we take values as is.
     const rot = event.rotationRate;
 
@@ -54,23 +60,23 @@ export function startSensorStream(onReading: (r: SensorReading) => void): () => 
       accelerometer: {
         x: (acc.x || 0) / 9.81,
         y: (acc.y || 0) / 9.81,
-        z: (acc.z || 0) / 9.81
+        z: (acc.z || 0) / 9.81,
       },
       gyroscope: {
         x: rot?.alpha || 0,
         y: rot?.beta || 0,
-        z: rot?.gamma || 0
+        z: rot?.gamma || 0,
       },
       gps: {
-        speed: currentSpeed
-      }
+        speed: currentSpeed,
+      },
     });
   };
 
-  window.addEventListener('devicemotion', handleMotion);
-  
+  window.addEventListener("devicemotion", handleMotion);
+
   return () => {
-    window.removeEventListener('devicemotion', handleMotion);
+    window.removeEventListener("devicemotion", handleMotion);
     if (watchId !== null) navigator.geolocation.clearWatch(watchId);
   };
 }

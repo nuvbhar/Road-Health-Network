@@ -16,7 +16,9 @@
 .modal {
   background-color: var(--bg-surface);
   border-radius: var(--radius-lg);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
   width: 100%;
   max-width: 600px;
   overflow: hidden;
@@ -42,7 +44,7 @@
 .id {
   font-size: var(--type-caption);
   color: var(--text-secondary);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
 }
 
 .closeBtn {
@@ -183,7 +185,7 @@
 }
 
 .btnReview:not(:disabled):hover {
-  background-color: #FDE68A;
+  background-color: #fde68a;
 }
 
 .btnResolved {
@@ -193,7 +195,7 @@
 }
 
 .btnResolved:not(:disabled):hover {
-  background-color: #BBF7D0;
+  background-color: #bbf7d0;
 }
 
 .corroborationPreview {

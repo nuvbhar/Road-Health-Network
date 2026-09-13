@@ -1,16 +1,22 @@
-import React, { useEffect } from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
-import { Header } from './components/layout/Header';
-import { PageShell } from './components/layout/PageShell';
-import { OverviewPage } from './pages/OverviewPage';
-import { ReportsPage } from './pages/ReportsPage';
-import { useAppStore } from './store/useAppStore';
+import React, { useEffect } from "react";
+import { HashRouter, Routes, Route } from "react-router-dom";
+import { Header } from "./components/layout/Header";
+import { PageShell } from "./components/layout/PageShell";
+import { OverviewPage } from "./pages/OverviewPage";
+import { ReportsPage } from "./pages/ReportsPage";
+import { useAppStore } from "./store/useAppStore";
 
-const LiveSensorPage = React.lazy(() => import('./pages/LiveSensorPage').then(m => ({ default: m.LiveSensorPage })));
-const MobileSensorPage = React.lazy(() => import('./pages/MobileSensorPage').then(m => ({ default: m.MobileSensorPage })));
+const LiveSensorPage = React.lazy(() =>
+  import("./pages/LiveSensorPage").then((m) => ({ default: m.LiveSensorPage })),
+);
+const MobileSensorPage = React.lazy(() =>
+  import("./pages/MobileSensorPage").then((m) => ({
+    default: m.MobileSensorPage,
+  })),
+);
 
 export const App: React.FC = () => {
-  const loadInitialData = useAppStore(state => state.loadInitialData);
+  const loadInitialData = useAppStore((state) => state.loadInitialData);
 
   useEffect(() => {
     loadInitialData();

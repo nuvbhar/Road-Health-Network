@@ -1,15 +1,15 @@
-import React from 'react';
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer 
-} from 'recharts';
-import { useAppStore } from '../../store/useAppStore';
-import styles from './TrendGraph.module.css';
+import React from "react";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { useAppStore } from "../../store/useAppStore";
+import styles from "./TrendGraph.module.css";
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -27,7 +27,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export const TrendGraph: React.FC = () => {
-  const trendData = useAppStore(state => state.trendData);
+  const trendData = useAppStore((state) => state.trendData);
 
   return (
     <div className={styles.container}>
@@ -40,36 +40,59 @@ export const TrendGraph: React.FC = () => {
           >
             <defs>
               <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.2}/>
-                <stop offset="95%" stopColor="var(--accent)" stopOpacity={0}/>
+                <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.2} />
+                <stop offset="95%" stopColor="var(--accent)" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-light)" />
-            <XAxis 
-              dataKey="hour" 
-              tick={{ fontSize: 12, fill: 'var(--text-muted)' }} 
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              stroke="var(--border-light)"
+            />
+            <XAxis
+              dataKey="hour"
+              tick={{ fontSize: 12, fill: "var(--text-muted)" }}
               tickMargin={10}
               axisLine={false}
               tickLine={false}
               minTickGap={30}
             />
-            <YAxis 
-              tick={{ fontSize: 12, fill: 'var(--text-muted)' }}
+            <YAxis
+              tick={{ fontSize: 12, fill: "var(--text-muted)" }}
               tickMargin={10}
               axisLine={false}
               tickLine={false}
-              label={{ value: 'Reports/hr', angle: -90, position: 'insideLeft', style: { fill: 'var(--text-muted)', fontSize: 12, fontWeight: 500 } }}
+              label={{
+                value: "Reports/hr",
+                angle: -90,
+                position: "insideLeft",
+                style: {
+                  fill: "var(--text-muted)",
+                  fontSize: 12,
+                  fontWeight: 500,
+                },
+              }}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Area 
-              type="stepAfter" 
-              dataKey="count" 
-              stroke="var(--accent)" 
+            <Area
+              type="stepAfter"
+              dataKey="count"
+              stroke="var(--accent)"
               strokeWidth={2}
-              fillOpacity={1} 
-              fill="url(#colorCount)" 
-              dot={{ r: 4, fill: 'var(--bg-surface)', stroke: 'var(--accent)', strokeWidth: 2 }}
-              activeDot={{ r: 6, fill: 'var(--accent)', stroke: 'var(--bg-surface)', strokeWidth: 2 }}
+              fillOpacity={1}
+              fill="url(#colorCount)"
+              dot={{
+                r: 4,
+                fill: "var(--bg-surface)",
+                stroke: "var(--accent)",
+                strokeWidth: 2,
+              }}
+              activeDot={{
+                r: 6,
+                fill: "var(--accent)",
+                stroke: "var(--bg-surface)",
+                strokeWidth: 2,
+              }}
             />
           </AreaChart>
         </ResponsiveContainer>

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap");
 
 /* Fallback for self-hosted font if we were using local files */
 /*
@@ -11,7 +11,13 @@
 */
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   background-color: var(--bg-page);
   color: var(--text-primary);
   font-size: var(--type-body);
@@ -38,7 +44,7 @@ body {
 
 /* Utility classes for typography */
 .font-mono {
-  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Consolas', monospace;
+  font-family: "JetBrains Mono", "Fira Code", "SF Mono", "Consolas", monospace;
   font-variant-numeric: tabular-nums;
 }
 

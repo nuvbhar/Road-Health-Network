@@ -21,28 +21,38 @@
   background-color: var(--colour-ok-light);
   color: var(--colour-ok);
 }
-.ok .dot { background-color: var(--colour-ok); }
+.ok .dot {
+  background-color: var(--colour-ok);
+}
 
 .warning {
   background-color: var(--colour-warning-light);
   color: var(--colour-warning);
 }
-.warning .dot { background-color: var(--colour-warning); }
+.warning .dot {
+  background-color: var(--colour-warning);
+}
 
 .danger {
   background-color: var(--colour-danger-light);
   color: var(--colour-danger);
 }
-.danger .dot { background-color: var(--colour-danger); }
+.danger .dot {
+  background-color: var(--colour-danger);
+}
 
 .info {
   background-color: var(--colour-info-light);
   color: var(--colour-info);
 }
-.info .dot { background-color: var(--colour-info); }
+.info .dot {
+  background-color: var(--colour-info);
+}
 
 .neutral {
   background-color: var(--bg-inset);
   color: var(--text-secondary);
 }
-.neutral .dot { background-color: var(--text-secondary); }
+.neutral .dot {
+  background-color: var(--text-secondary);
+}
