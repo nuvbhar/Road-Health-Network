@@ -11,14 +11,7 @@ export interface Sector {
 
 export type ReportType =
   | 'POTENTIAL_POTHOLE'
-  | 'ROAD_ANOMALY'
-  | 'SURFACE_DEGRADATION'
-  | 'SEVERE_CRACK'
-  | 'SPEED_BUMP_UNMARKED'
-  | 'WATERLOGGING'
-  | 'DEBRIS_ON_ROAD'
-  | 'UNEVEN_JOINT'
-  | 'MANHOLE_DEPRESSION';
+  | 'SEVERE_POTHOLE';
 
 export interface Report {
   id: string;
@@ -28,6 +21,7 @@ export interface Report {
   roadReference: string;
   type: ReportType;
   confidence: number;
+  weight?: number;
   source: 'VEHICLE_SENSOR';
   vehicleRef: string;
   rawDataShared: boolean;
@@ -65,9 +59,19 @@ export interface SensorReading {
   gyroscope: { x: number; y: number; z: number };
 }
 
+export interface EngineMetrics {
+  rawZ: number;
+  meanZ: number;
+  stdDev: number;
+  zForce: number;
+  snr: number;
+  threshold: number;
+}
+
 export interface RoadEvent {
   detected: boolean;
   type: string | null;
   confidence: number;
+  weight?: number;
   timestamp: number | null;
 }

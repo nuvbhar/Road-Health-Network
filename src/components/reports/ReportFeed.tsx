@@ -36,6 +36,7 @@ export const ReportFeed: React.FC = () => {
                 className={`${styles.pill} ${activeStatusFilter === status ? styles.pillActive : ''}`}
                 onClick={() => setStatusFilter(status)}
               >
+                {activeStatusFilter === status && <span style={{ marginRight: '4px', fontWeight: 'bold' }}>✓</span>}
                 {status.replace('_', ' ')}
               </button>
             ))}
@@ -43,6 +44,23 @@ export const ReportFeed: React.FC = () => {
         </div>
 
         <div className={styles.feed} aria-live="polite">
+          <div className={styles.row} style={{ 
+            borderBottom: '1px solid var(--border-default)', 
+            backgroundColor: 'var(--bg-inset)',
+            textTransform: 'uppercase',
+            fontSize: 'var(--type-caption)',
+            fontWeight: 600,
+            color: 'var(--text-muted)',
+            letterSpacing: '0.04em',
+            padding: 'var(--space-2) var(--space-5)'
+          }}>
+            <div>Incident & Location</div>
+            <div>Date</div>
+            <div>Confidence</div>
+            <div>Severity</div>
+            <div>Corroboration</div>
+            <div style={{ textAlign: 'right', paddingRight: 'var(--space-4)' }}>Status</div>
+          </div>
           {filteredReports.length === 0 ? (
             <div className={styles.empty}>No reports matching the current filters.</div>
           ) : (

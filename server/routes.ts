@@ -69,9 +69,26 @@ router.get('/trend', (req, res) => {
     d.setHours(d.getHours() - (23 - i));
     return {
       hour: `${d.getHours().toString().padStart(2, '0')}:00`,
-      count: Math.floor(10 + Math.random() * 40)
+      count: 0
     };
   });
+
+  const recentReports = db.prepare('SELECT reportDate FROM reports').all();
+  const now = Date.now();
+  
+  recentReports.forEach((r: any) => {
+    const rDate = new Date(r.reportDate);
+    if (!isNaN(rDate.getTime())) {
+      const diffHours = Math.floor((now - rDate.getTime()) / (1000 * 60 * 60));
+      if (diffHours >= 0 && diffHours < 24) {
+        const bucketIndex = 23 - diffHours;
+        if (trend[bucketIndex]) {
+          trend[bucketIndex].count++;
+        }
+      }
+    }
+  });
+
   res.json({ ok: true, data: trend });
 });
 
@@ -109,7 +126,7 @@ router.post('/reports', (req, res) => {
   const lat = data.latitude || 0;
   const lon = data.longitude || 0;
   const reportType = data.type || 'ROAD_ANOMALY';
-  const vehicleRef = data.vehicleRef || 'V-UNKNOWN';
+  const vehicleRef = data.vehicleRef || 'User-UNKNOWN';
 
   // 1. Check for nearby active reports of same type
   const activeReports = db.prepare('SELECT * FROM reports WHERE status != ? AND type = ?').all('resolved', reportType);
@@ -152,18 +169,19 @@ router.post('/reports', (req, res) => {
   // 2. No nearby report found, create a new one
   const id = data.id || `RPT-${Math.floor(1000 + Math.random() * 9000)}`;
   const insert = db.prepare(`
-    INSERT INTO reports (id, reportDate, sectorId, sectorName, roadReference, type, confidence, source, vehicleRef, rawDataShared, status, latitude, longitude, independentReports)
-    VALUES (@id, @reportDate, @sectorId, @sectorName, @roadReference, @type, @confidence, @source, @vehicleRef, @rawDataShared, @status, @latitude, @longitude, @independentReports)
+    INSERT INTO reports (id, reportDate, sectorId, sectorName, roadReference, type, confidence, weight, source, vehicleRef, rawDataShared, status, latitude, longitude, independentReports)
+    VALUES (@id, @reportDate, @sectorId, @sectorName, @roadReference, @type, @confidence, @weight, @source, @vehicleRef, @rawDataShared, @status, @latitude, @longitude, @independentReports)
   `);
   
   insert.run({
     id,
-    reportDate: data.reportDate || new Date().toISOString().split('T')[0],
+    reportDate: data.reportDate || new Date().toISOString(),
     sectorId: data.sectorId || 'SEC-A',
     sectorName: data.sectorName || 'Kharar-CU Sector A',
     roadReference: data.roadReference || 'Unknown',
     type: reportType,
     confidence: data.confidence || 50,
+    weight: data.weight || 0,
     source: data.source || 'VEHICLE_SENSOR',
     vehicleRef,
     rawDataShared: 0,

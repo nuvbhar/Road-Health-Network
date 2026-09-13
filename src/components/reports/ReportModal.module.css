@@ -62,13 +62,49 @@
 
 .content {
   padding: var(--space-6);
+  max-height: 80vh;
+  overflow-y: auto;
 }
 
-.grid {
+.sectionGroup {
+  background-color: var(--bg-page);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  margin-bottom: var(--space-6);
+}
+
+.sectionTitle {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: var(--space-2);
+}
+
+.mapThumbnail {
+  width: 100%;
+  height: 120px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: var(--space-4);
+  border: 1px solid var(--border-light);
+  z-index: 1;
+}
+
+.metadataGrid {
   display: grid;
-  grid-template-columns: 160px 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: var(--space-4);
-  margin-bottom: var(--space-8);
+}
+
+.metaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .label {
@@ -76,45 +112,137 @@
   color: var(--text-secondary);
   font-weight: 600;
   text-transform: uppercase;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
 }
 
 .value {
   font-size: var(--type-body);
   color: var(--text-primary);
+}
+
+.confidenceContainer {
   display: flex;
   align-items: center;
   gap: var(--space-3);
 }
 
-.confidenceScore {
-  font-size: var(--type-heading);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--colour-danger);
+.confidenceGauge {
+  flex: 1;
+  height: 6px;
+  background-color: var(--bg-inset);
+  border-radius: var(--radius-full);
+  overflow: hidden;
 }
 
-.corroboration {
-  font-size: var(--type-caption);
-  color: var(--text-secondary);
+.confidenceFill {
+  height: 100%;
+  border-radius: var(--radius-full);
 }
 
-.actions {
-  border-top: 1px solid var(--border-light);
-  padding-top: var(--space-6);
-}
-
-.actionLabel {
-  font-size: var(--type-caption);
-  color: var(--text-secondary);
-  font-weight: 600;
-  margin-bottom: var(--space-3);
-}
-
-.actionGroup {
+.statusBtns {
   display: flex;
   gap: var(--space-3);
-  justify-content: flex-end;
+  margin-bottom: var(--space-5);
+}
+
+.statusBtn {
+  flex: 1;
+  padding: var(--space-2) var(--space-2);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: var(--type-body);
+  text-align: center;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all var(--duration-fast);
+  background: transparent;
+}
+
+.statusBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+  filter: grayscale(100%);
+  background-color: var(--bg-inset) !important;
+  border-color: var(--border-default) !important;
+  color: var(--text-secondary) !important;
+}
+
+.btnPending {
+  background-color: var(--bg-elevated);
+  border-color: var(--border-default);
+  color: var(--text-secondary);
+}
+
+.btnPending:not(:disabled):hover {
+  background-color: var(--bg-inset);
+}
+
+.btnReview {
+  background-color: var(--colour-warning-light);
+  border-color: var(--colour-warning-border);
+  color: var(--colour-warning);
+}
+
+.btnReview:not(:disabled):hover {
+  background-color: #FDE68A;
+}
+
+.btnResolved {
+  background-color: var(--colour-ok-light);
+  border-color: var(--colour-ok-border);
+  color: var(--colour-ok);
+}
+
+.btnResolved:not(:disabled):hover {
+  background-color: #BBF7D0;
+}
+
+.corroborationPreview {
+  font-size: var(--type-caption);
+  color: var(--colour-info);
+  font-weight: 600;
+  text-transform: none;
+  margin-left: var(--space-2);
+}
+
+.corroboratorCard {
+  padding: var(--space-3);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.corroborationsToggle {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.chevron {
+  margin-right: var(--space-2);
+  transition: transform 300ms ease;
+  display: inline-block;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.chevron.open {
+  transform: rotate(90deg);
+}
+
+.corroborationsWrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.corroborationsWrapper.open {
+  grid-template-rows: 1fr;
+}
+
+.corroborationsInner {
+  overflow: hidden;
 }

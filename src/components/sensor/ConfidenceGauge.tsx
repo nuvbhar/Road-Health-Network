@@ -6,16 +6,12 @@ export const ConfidenceGauge: React.FC = () => {
   const event = useAppStore(state => state.liveSensor.event);
   
   const confidence = event?.confidence || 0;
-  
-  // Calculate arc for an SVG doughnut chart (semi-circle)
-  const radius = 60;
-  const circumference = radius * Math.PI;
-  const strokeDashoffset = circumference - (confidence / 100) * circumference;
 
   let colour = 'var(--text-muted)';
   if (confidence > 80) colour = 'var(--colour-danger)';
   else if (confidence > 50) colour = 'var(--colour-warning)';
   else if (confidence > 0) colour = 'var(--colour-ok)';
+  else if (event) colour = 'var(--colour-ok)'; // 0% but active
 
   return (
     <div className={styles.container} aria-live="assertive">
@@ -28,7 +24,9 @@ export const ConfidenceGauge: React.FC = () => {
             fill="none" 
             stroke="var(--bg-inset)" 
             strokeWidth="16" 
-            strokeLinecap="round" 
+            strokeLinecap={event ? "round" : "butt"} 
+            pathLength="100"
+            strokeDasharray={event ? "none" : "2 6"}
           />
           {/* Foreground arc */}
           <path 
@@ -37,20 +35,19 @@ export const ConfidenceGauge: React.FC = () => {
             stroke={colour} 
             strokeWidth="16" 
             strokeLinecap="round" 
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
+            pathLength="100"
+            strokeDasharray="100"
+            strokeDashoffset={100 - confidence}
             className={styles.arc}
             style={{ transition: 'stroke-dashoffset 1s ease-out, stroke 0.3s' }}
           />
         </svg>
         <div className={styles.valueDisplay}>
-          <span className={styles.value} style={{ color: colour }}>{confidence}%</span>
-          <span className={styles.label}>Probability</span>
+          <span className={styles.value} style={{ color: event ? colour : 'var(--text-muted)' }}>
+            {event ? `${confidence}%` : '---'}
+          </span>
+          <span className={styles.label}>{event ? 'Probability' : 'Waiting...'}</span>
         </div>
-      </div>
-      
-      <div className={styles.info}>
-        Confidence is calculated using vertical G-force magnitude, impact duration, and matching signatures to known defect profiles.
       </div>
     </div>
   );

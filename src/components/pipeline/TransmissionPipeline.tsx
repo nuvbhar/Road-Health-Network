@@ -21,8 +21,19 @@ export const TransmissionPipeline: React.FC = () => {
         setTimeout(() => {
           setTransmissionStage('confirmed');
           
-          // We no longer emit the report here, the mobile sensor does it directly.
-          // This pipeline is now purely a visual reflection of the transmission process.
+          if (event && event.type) {
+            const uuid = crypto.randomUUID ? crypto.randomUUID() : 'User-' + Math.floor(Math.random() * 9999999);
+            useAppStore.getState().addReport({
+              type: event.type as any,
+              confidence: event.confidence,
+              weight: event.weight || 0,
+              source: 'VEHICLE_SENSOR',
+              vehicleRef: uuid,
+              latitude: 30.75 + (Math.random() * 0.01), // mock lat
+              longitude: 76.64 + (Math.random() * 0.01), // mock lng
+              status: 'pending'
+            }).catch(e => console.warn('Failed to push to DB (no backend running?):', e));
+          }
           
           // Reset after a while
           setTimeout(() => {

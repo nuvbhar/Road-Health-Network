@@ -12,6 +12,8 @@
   overflow: hidden;
   flex: 1;
   min-width: 160px;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .card.hover {
@@ -29,10 +31,20 @@
   width: 4px;
 }
 
+.neutral::before { background-color: var(--text-muted); }
 .info::before { background-color: var(--colour-info); }
 .warning::before { background-color: var(--colour-warning); }
 .danger::before { background-color: var(--colour-danger); }
 .ok::before { background-color: var(--colour-ok); }
+
+.urgent.danger {
+  background-color: var(--colour-danger-light);
+  border-color: var(--colour-danger-border);
+}
+.urgent.warning {
+  background-color: var(--colour-warning-light);
+  border-color: var(--colour-warning-border);
+}
 
 .iconWrapper {
   display: flex;
@@ -41,6 +53,7 @@
   margin-top: 2px;
 }
 
+.neutral .icon { color: var(--text-muted); }
 .info .icon { color: var(--colour-info); }
 .warning .icon { color: var(--colour-warning); }
 .danger .icon { color: var(--colour-danger); }
@@ -58,6 +71,11 @@
   line-height: 1;
   margin-bottom: var(--space-1);
   font-variant-numeric: tabular-nums;
+  transition: font-size var(--duration-fast);
+}
+
+.urgent .value {
+  font-size: calc(var(--type-stat) * 1.25);
 }
 
 .label {

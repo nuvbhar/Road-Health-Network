@@ -12,9 +12,6 @@ export const TabNav: React.FC = () => {
         <NavLink to="/reports" className={({ isActive }) => isActive ? styles.active : styles.link}>
           Reports
         </NavLink>
-        <NavLink to="/live-sensor" className={({ isActive }) => isActive ? styles.active : styles.link}>
-          Live Sensor
-        </NavLink>
       </div>
     </nav>
   );

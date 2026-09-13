@@ -67,7 +67,7 @@
 
 .row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 2.5fr 1fr 0.8fr 1fr 1.5fr 1fr;
   align-items: center;
   padding: var(--space-3) var(--space-5);
   border-bottom: 1px solid var(--border-light);
@@ -139,6 +139,7 @@
 .cellStatus {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
 }
 
 .empty {
@@ -164,20 +165,21 @@
 }
 
 .vehiclePill {
-  background-color: var(--bg-inset);
-  border: 1px solid var(--border-default);
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-full);
   padding: 0 6px;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-secondary);
   font-family: monospace;
 }
 
 .vehiclePillMore {
-  background-color: var(--bg-elevated);
+  background-color: var(--bg-surface);
+  border: 1px dashed var(--border-light);
   border-radius: var(--radius-full);
-  padding: 0 4px;
+  padding: 0 6px;
   font-size: 10px;
   color: var(--text-muted);
   font-weight: 600;

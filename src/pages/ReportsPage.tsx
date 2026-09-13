@@ -2,12 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { ReportRow } from '../components/reports/ReportRow';
 import { ReportModal } from '../components/reports/ReportModal';
-import { Report } from '../store/types';
 import { SearchIcon } from '../components/shared/Icons';
 
 export const ReportsPage: React.FC = () => {
   const reports = useAppStore(state => state.reports);
-  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
@@ -76,7 +75,7 @@ export const ReportsPage: React.FC = () => {
           </div>
         ) : (
           displayedReports.map(report => (
-            <ReportRow key={report.id} report={report} onClick={setSelectedReport} />
+            <ReportRow key={report.id} report={report} onClick={(r) => setSelectedReportId(r.id)} />
           ))
         )}
       </div>
@@ -115,10 +114,10 @@ export const ReportsPage: React.FC = () => {
         </div>
       </div>
       
-      {selectedReport && (
+      {selectedReportId && reports.find(r => r.id === selectedReportId) && (
         <ReportModal 
-          report={selectedReport} 
-          onClose={() => setSelectedReport(null)} 
+          report={reports.find(r => r.id === selectedReportId)!} 
+          onClose={() => setSelectedReportId(null)} 
         />
       )}
     </div>

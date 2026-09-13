@@ -14,9 +14,9 @@
 }
 
 .button:disabled {
-  opacity: 0.5;
   cursor: not-allowed;
-  pointer-events: none;
+  filter: grayscale(100%);
+  opacity: 0.8;
 }
 
 /* Primary */

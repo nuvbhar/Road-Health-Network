@@ -27,6 +27,7 @@ db.exec(`
     roadReference TEXT,
     type TEXT NOT NULL,
     confidence REAL,
+    weight REAL,
     source TEXT DEFAULT 'VEHICLE_SENSOR',
     vehicleRef TEXT,
     rawDataShared INTEGER DEFAULT 0,
@@ -69,8 +70,8 @@ if (count.c === 0) {
   }));
 
   const insertReport = db.prepare(`
-    INSERT INTO reports (id, reportDate, sectorId, sectorName, roadReference, type, confidence, source, vehicleRef, rawDataShared, status, latitude, longitude, independentReports)
-    VALUES (@id, @reportDate, @sectorId, @sectorName, @roadReference, @type, @confidence, @source, @vehicleRef, @rawDataShared, @status, @latitude, @longitude, @independentReports)
+    INSERT INTO reports (id, reportDate, sectorId, sectorName, roadReference, type, confidence, weight, source, vehicleRef, rawDataShared, status, latitude, longitude, independentReports)
+    VALUES (@id, @reportDate, @sectorId, @sectorName, @roadReference, @type, @confidence, @weight, @source, @vehicleRef, @rawDataShared, @status, @latitude, @longitude, @independentReports)
   `);
   
   const insertReportVehicle = db.prepare(`

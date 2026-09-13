@@ -87,7 +87,7 @@ export const SectorMap: React.FC = () => {
                 pathOptions={{ 
                   color: isActive ? '#0f172a' : getStatusColor(sector.status), 
                   weight: isActive ? 10 : 6,
-                  opacity: 0.8
+                  opacity: isActive ? 0.8 : 0.4
                 }}
                 eventHandlers={{
                   click: () => {
@@ -117,6 +117,7 @@ export const SectorMap: React.FC = () => {
       </div>
       
       <div className={styles.legend}>
+        <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Segment Health:</span>
         <div className={styles.legendItem}>
           <div className={styles.legendColor} style={{ backgroundColor: '#16a34a' }}></div>
           <span>Normal</span>

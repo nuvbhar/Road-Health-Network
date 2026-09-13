@@ -1,20 +1,17 @@
 .container {
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);
-  padding: var(--space-5);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
   align-items: center;
+  height: 100%;
 }
 
 .title {
-  font-size: var(--type-heading);
+  font-size: var(--type-body);
   font-weight: 600;
-  margin-bottom: var(--space-4);
-  color: var(--text-primary);
-  align-self: flex-start;
+  margin-bottom: var(--space-5);
+  color: var(--text-secondary);
+  text-align: center;
+  align-self: center;
 }
 
 .gaugeWrapper {
@@ -52,14 +49,4 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   margin-top: 4px;
-}
-
-.info {
-  margin-top: var(--space-4);
-  font-size: var(--type-caption);
-  color: var(--text-secondary);
-  text-align: center;
-  line-height: 1.4;
-  padding-top: var(--space-4);
-  border-top: 1px dashed var(--border-light);
 }

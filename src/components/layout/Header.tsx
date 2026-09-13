@@ -1,6 +1,7 @@
 import React from 'react';
-import { Badge } from '../shared/Badge';
+import { NavLink } from 'react-router-dom';
 import { TabNav } from './TabNav';
+import { ActivityIcon } from '../shared/Icons';
 import styles from './Header.module.css';
 
 export const Header: React.FC = () => {
@@ -11,14 +12,19 @@ export const Header: React.FC = () => {
           <div className={styles.logo}></div>
           <div className={styles.titleGroup}>
             <h1 className={styles.title}>Road Health Network</h1>
-            <span className={styles.subtitle}>Government Road Intelligence</span>
           </div>
         </div>
         <TabNav />
       </div>
       <div className={styles.right}>
-        <Badge variant="ok" role="status">System Online</Badge>
-        <span className={styles.timestamp}>Last updated: {new Date().toLocaleTimeString()}</span>
+        <NavLink 
+          to="/live-sensor" 
+          className={({ isActive }) => `${styles.debugLink} ${isActive ? styles.active : ''}`}
+          title="Debug Live Sensor"
+        >
+          <ActivityIcon width={20} height={20} />
+          <span>Live Sensor (Debug)</span>
+        </NavLink>
       </div>
     </header>
   );

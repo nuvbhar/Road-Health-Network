@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Sector, Report, Vehicle, AppStats, TrendDataPoint, SensorReading, RoadEvent } from './types';
+import { Sector, Report, Vehicle, AppStats, TrendDataPoint, SensorReading, RoadEvent, EngineMetrics } from './types';
 import { fetchStats, fetchSectors, fetchReports, fetchVehicles, fetchTrend, updateReportStatus as apiUpdateReportStatus, createReport as apiCreateReport } from '../services/api';
 
 interface AppState {
@@ -18,11 +18,11 @@ interface AppState {
     connected: boolean;
     reading: SensorReading | null;
     event: RoadEvent | null;
+    metrics: EngineMetrics | null;
   };
   transmission: {
     stage: 'idle' | 'processing' | 'transmitted' | 'confirmed';
   };
-  demoMode: boolean;
 
   // Actions
   setStats: (stats: AppStats) => void;
@@ -33,8 +33,8 @@ interface AppState {
   setSortColumn: (col: string, dir: 'asc' | 'desc') => void;
   setSensorReading: (reading: SensorReading) => void;
   setSensorEvent: (event: RoadEvent | null) => void;
+  setEngineMetrics: (metrics: EngineMetrics) => void;
   setTransmissionStage: (stage: 'idle' | 'processing' | 'transmitted' | 'confirmed') => void;
-  toggleDemoMode: () => void;
   loadInitialData: () => Promise<void>;
 }
 
@@ -50,9 +50,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   sortColumn: 'reportDate',
   sortDirection: 'desc',
   
-  liveSensor: { connected: false, reading: null, event: null },
+  liveSensor: { connected: false, reading: null, event: null, metrics: null },
   transmission: { stage: 'idle' },
-  demoMode: false,
 
   setStats: (stats) => set({ stats }),
   
@@ -83,8 +82,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   setSensorEvent: (event) => set((state) => ({ 
     liveSensor: { ...state.liveSensor, event } 
   })),
+  setEngineMetrics: (metrics) => set((state) => ({ 
+    liveSensor: { ...state.liveSensor, metrics } 
+  })),
   setTransmissionStage: (stage) => set({ transmission: { stage } }),
-  toggleDemoMode: () => set((state) => ({ demoMode: !state.demoMode })),
   
   loadInitialData: async () => {
     try {

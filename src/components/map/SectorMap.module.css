@@ -51,9 +51,36 @@
 }
 
 .legendColor {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
+  width: 16px;
+  height: 6px;
+  border-radius: 3px;
+}
+
+:global(.leaflet-control-zoom) {
+  border: none !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+  border-radius: var(--radius-md) !important;
+  overflow: hidden;
+}
+
+:global(.leaflet-control-zoom-in),
+:global(.leaflet-control-zoom-out) {
+  background-color: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-light) !important;
+}
+
+:global(.leaflet-control-zoom-in:hover),
+:global(.leaflet-control-zoom-out:hover) {
+  background-color: var(--bg-elevated) !important;
+}
+
+:global(.leaflet-control-attribution) {
+  opacity: 0.5;
+  font-size: 8px !important;
+  transform: scale(0.9);
+  transform-origin: bottom right;
+  background: transparent !important;
 }
 
 .tooltipContainer {

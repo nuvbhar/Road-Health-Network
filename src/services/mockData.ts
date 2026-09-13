@@ -33,35 +33,39 @@ export const mockSectors: Sector[] = Array.from({ length: 12 }, (_, i) => {
 });
 
 const reportTypes: Report['type'][] = [
-  'POTENTIAL_POTHOLE', 'ROAD_ANOMALY', 'SURFACE_DEGRADATION',
-  'SEVERE_CRACK', 'SPEED_BUMP_UNMARKED', 'WATERLOGGING',
-  'DEBRIS_ON_ROAD', 'UNEVEN_JOINT', 'MANHOLE_DEPRESSION'
+  'POTENTIAL_POTHOLE', 'SEVERE_POTHOLE'
 ];
+
+function generateMockUUID() {
+  const hex = () => Math.random().toString(16).slice(2, 10);
+  return `User-${hex()}-${hex().slice(0, 4)}`;
+}
 
 export const mockReports: Report[] = Array.from({ length: 30 }, (_, i) => {
   const sector = mockSectors[i % 12];
   const independentReportsCount = 1 + Math.floor(Math.random() * 3);
   return {
     id: `RPT-08${47 - i}`,
-    reportDate: new Date(Date.now() - i * 15 * 60000).toISOString().split('T')[0],
+    reportDate: new Date(Date.now() - i * 15 * 60000).toISOString(),
     sectorId: sector.id,
     sectorName: sector.name,
     roadReference: `Toll-03 / ${sector.name}`,
     type: reportTypes[i % reportTypes.length],
     confidence: 60 + Math.floor(Math.random() * 38),
+    weight: parseFloat((2 + Math.random() * 3).toFixed(2)),
     source: 'VEHICLE_SENSOR',
-    vehicleRef: `V-00${10 + i}`,
+    vehicleRef: generateMockUUID(),
     rawDataShared: false,
     status: i % 5 === 0 ? 'under_review' : i % 8 === 0 ? 'resolved' : 'pending',
     independentReports: independentReportsCount,
     latitude: sector.bounds.startLat + (sector.bounds.endLat - sector.bounds.startLat) * Math.random(),
     longitude: sector.bounds.startLng + (sector.bounds.endLng - sector.bounds.startLng) * Math.random(),
-    reportingVehicles: Array.from({ length: independentReportsCount }, (_, j) => `V-00${10 + i + j}`)
+    reportingVehicles: Array.from({ length: independentReportsCount }, () => generateMockUUID())
   };
 });
 
 export const mockVehicles: Vehicle[] = Array.from({ length: 174 }, (_, i) => ({
-  id: `V-0${100 + i}`,
+  id: generateMockUUID(),
   sectorId: mockSectors[i % 12].id,
   status: i < 124 ? 'active' : i < 162 ? 'idle' : 'offline',
   reportsToday: Math.floor(Math.random() * 5),

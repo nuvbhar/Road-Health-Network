@@ -5,10 +5,11 @@ interface StatCardProps {
   label: string;
   value: number;
   icon: React.ElementType;
-  accentColour: 'info' | 'warning' | 'danger' | 'ok';
+  accentColour: 'neutral' | 'info' | 'warning' | 'danger' | 'ok';
+  urgent?: boolean;
 }
 
-export const StatCard: React.FC<StatCardProps> = React.memo(({ label, value, icon: Icon, accentColour }) => {
+export const StatCard: React.FC<StatCardProps> = React.memo(({ label, value, icon: Icon, accentColour, urgent }) => {
   const [displayValue, setDisplayValue] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const prevValueRef = useRef(0);
@@ -51,7 +52,7 @@ export const StatCard: React.FC<StatCardProps> = React.memo(({ label, value, ico
 
   return (
     <div 
-      className={`${styles.card} ${styles[accentColour]} ${isHovered ? styles.hover : ''}`}
+      className={`${styles.card} ${styles[accentColour]} ${isHovered ? styles.hover : ''} ${urgent ? styles.urgent : ''}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

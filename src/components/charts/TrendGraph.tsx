@@ -33,7 +33,7 @@ export const TrendGraph: React.FC = () => {
     <div className={styles.container}>
       <h3 className={styles.title}>24-Hour Reporting Trend</h3>
       <div className={styles.chartWrapper}>
-        <ResponsiveContainer width="100%" height={240}>
+        <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={trendData}
             margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
@@ -58,15 +58,17 @@ export const TrendGraph: React.FC = () => {
               tickMargin={10}
               axisLine={false}
               tickLine={false}
+              label={{ value: 'Reports/hr', angle: -90, position: 'insideLeft', style: { fill: 'var(--text-muted)', fontSize: 12, fontWeight: 500 } }}
             />
             <Tooltip content={<CustomTooltip />} />
             <Area 
-              type="monotone" 
+              type="stepAfter" 
               dataKey="count" 
               stroke="var(--accent)" 
               strokeWidth={2}
               fillOpacity={1} 
               fill="url(#colorCount)" 
+              dot={{ r: 4, fill: 'var(--bg-surface)', stroke: 'var(--accent)', strokeWidth: 2 }}
               activeDot={{ r: 6, fill: 'var(--accent)', stroke: 'var(--bg-surface)', strokeWidth: 2 }}
             />
           </AreaChart>
