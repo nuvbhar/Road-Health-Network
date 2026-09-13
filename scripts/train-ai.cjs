@@ -60,7 +60,8 @@ function generateData() {
   const shuffledYs = indices.map((i) => ys[i]);
 
   return {
-    inputs: tf.tensor2d(shuffledXs),
+    // Expand dimensions from [samples, 20] to [samples, 20, 1]
+    inputs: tf.tensor2d(shuffledXs).expandDims(-1),
     labels: tf.tensor2d(shuffledYs),
   };
 }
@@ -72,15 +73,10 @@ async function run() {
   console.log("Constructing 1D Convolutional Neural Network...");
   const model = tf.sequential();
 
-  model.add(
-    tf.layers.reshape({
-      targetShape: [WINDOW_SIZE, 1],
-      inputShape: [WINDOW_SIZE],
-    }),
-  );
-
+  // Root Fix: Natively accept [sequence.length, 1] instead of relying on a Reshape layer
   model.add(
     tf.layers.conv1d({
+      inputShape: [WINDOW_SIZE, 1],
       filters: 16,
       kernelSize: 3,
       activation: "relu",
