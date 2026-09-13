@@ -3,34 +3,45 @@ import { requestSensorAccess, startSensorStream } from '../services/sensorBridge
 import { processSensorReading } from '../services/detectionEngine';
 import { SensorReading } from '../store/types';
 import { Button } from '../components/shared/Button';
+import { useSearchParams } from 'react-router-dom';
+import Peer, { DataConnection } from 'peerjs';
 
 export const MobileSensorPage: React.FC = () => {
   const [isActive, setIsActive] = useState(false);
   const [status, setStatus] = useState('Disconnected');
   const [lastEvent, setLastEvent] = useState<any>(null);
+  const [searchParams] = useSearchParams();
   
-  const wsRef = useRef<WebSocket | null>(null);
+  const peerConnRef = useRef<DataConnection | null>(null);
   const stopStreamRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    // Initialise WebSocket connection
-    const WS_URL = import.meta.env.VITE_WS_URL || `ws://${window.location.host}`;
-    const ws = new WebSocket(WS_URL.replace('/api', '') + '/ws');
+    const targetPeerId = searchParams.get('peer');
     
-    ws.onopen = () => {
-      setStatus('Connected to Server');
-      ws.send(JSON.stringify({ type: 'init', clientType: 'sensor' }));
-    };
-    
-    ws.onclose = () => setStatus('Disconnected');
-    ws.onerror = () => setStatus('Connection Error');
-    wsRef.current = ws;
-
-    return () => {
-      ws.close();
-      if (stopStreamRef.current) stopStreamRef.current();
-    };
-  }, []);
+    if (targetPeerId) {
+      setStatus('Connecting to Dashboard (WebRTC)...');
+      const peer = new Peer();
+      
+      peer.on('open', () => {
+        const conn = peer.connect(targetPeerId);
+        
+        conn.on('open', () => {
+          setStatus('Connected (P2P)');
+          peerConnRef.current = conn;
+        });
+        
+        conn.on('close', () => setStatus('Disconnected (P2P)'));
+        conn.on('error', (err) => setStatus(`P2P Error: ${err.message}`));
+      });
+      
+      return () => {
+        peer.destroy();
+        if (stopStreamRef.current) stopStreamRef.current();
+      };
+    } else {
+      setStatus('No P2P target provided');
+    }
+  }, [searchParams]);
 
   const handleStart = async () => {
     const granted = await requestSensorAccess();
@@ -40,20 +51,20 @@ export const MobileSensorPage: React.FC = () => {
     }
 
     setIsActive(true);
-    setStatus('Streaming Data...');
+    setStatus('Streaming Data (P2P)...');
 
     // Callback that runs 30 times a second
     stopStreamRef.current = startSensorStream((reading: SensorReading) => {
-      // 1. Send reading over WS
-      if (wsRef.current?.readyState === WebSocket.OPEN) {
-        wsRef.current.send(JSON.stringify({ type: 'sensor:reading', data: reading }));
+      // 1. Send reading over P2P
+      if (peerConnRef.current?.open) {
+        peerConnRef.current.send({ type: 'sensor:reading', data: reading });
       }
       
       // 2. Process locally for events
       processSensorReading(reading, async (event) => {
         setLastEvent(event);
-        if (wsRef.current?.readyState === WebSocket.OPEN) {
-          wsRef.current.send(JSON.stringify({ type: 'sensor:event', data: event }));
+        if (peerConnRef.current?.open) {
+          peerConnRef.current.send({ type: 'sensor:event', data: event });
         }
 
         // Post to backend

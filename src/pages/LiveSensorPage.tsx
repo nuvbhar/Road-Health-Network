@@ -9,11 +9,14 @@ import { SmartphoneIcon } from '../components/shared/Icons';
 import { Button } from '../components/shared/Button';
 import { requestSensorAccess, startSensorStream } from '../services/sensorBridge';
 import { processSensorReading } from '../services/detectionEngine';
+import Peer from 'peerjs';
 
 export const LiveSensorPage: React.FC = () => {
   const [activeDevice, setActiveDevice] = useState<string | null>(null);
   const [localActive, setLocalActive] = useState(false);
+  const [peerId, setPeerId] = useState<string | undefined>(undefined);
   const stopStreamRef = useRef<(() => void) | null>(null);
+  const peerRef = useRef<Peer | null>(null);
   
   const setSensorReading = useAppStore(state => state.setSensorReading);
   const setSensorEvent = useAppStore(state => state.setSensorEvent);
@@ -22,15 +25,42 @@ export const LiveSensorPage: React.FC = () => {
   
   useEffect(() => {
     if (reading && !activeDevice) {
-      setActiveDevice(localActive ? 'This Device (Local)' : 'External Sensor Node');
+      setActiveDevice(localActive ? 'This Device (Local)' : 'External Sensor Node (P2P)');
     }
   }, [reading, activeDevice, localActive]);
 
   useEffect(() => {
+    // Initialize PeerJS for static P2P receiving
+    const peer = new Peer();
+    peer.on('open', (id) => {
+      console.log('PeerJS ID:', id);
+      setPeerId(id);
+    });
+
+    peer.on('connection', (conn) => {
+      console.log('Mobile device connected via WebRTC');
+      setActiveDevice('External Mobile Device (WebRTC)');
+      
+      conn.on('data', (data: any) => {
+        if (data && data.type === 'sensor:reading') {
+          setSensorReading(data.data);
+        } else if (data && data.type === 'sensor:event') {
+          setSensorEvent(data.data);
+        }
+      });
+      
+      conn.on('close', () => {
+        setActiveDevice(null);
+      });
+    });
+
+    peerRef.current = peer;
+
     return () => {
+      peer.destroy();
       if (stopStreamRef.current) stopStreamRef.current();
     };
-  }, []);
+  }, [setSensorReading, setSensorEvent]);
 
   const handleLocalToggle = async () => {
     if (localActive) {
@@ -94,7 +124,7 @@ export const LiveSensorPage: React.FC = () => {
         </div>
 
         <div style={{ width: '320px', flexShrink: 0 }}>
-          <PairingQR />
+          <PairingQR peerId={peerId} />
         </div>
       </div>
 

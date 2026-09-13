@@ -1,16 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import QRCode from 'react-qr-code';
 
-export const PairingQR: React.FC = () => {
+interface PairingQRProps {
+  peerId?: string;
+}
+
+export const PairingQR: React.FC<PairingQRProps> = ({ peerId }) => {
   const [url, setUrl] = useState('');
 
   useEffect(() => {
     // Generate the correct URL depending on whether we are using HashRouter or base paths
     const origin = window.location.origin;
     const pathname = window.location.pathname;
-    // Ensure we point to the #/sensor route regardless of current hash
-    setUrl(`${origin}${pathname}#/sensor`);
-  }, []);
+    // Point to the #/sensor route with the peerId
+    const target = `${origin}${pathname}#/sensor`;
+    setUrl(peerId ? `${target}?peer=${peerId}` : target);
+  }, [peerId]);
 
   if (!url) return null;
 
@@ -27,16 +32,18 @@ export const PairingQR: React.FC = () => {
     }}>
       <h3 style={{ marginBottom: 'var(--space-2)' }}>Connect a Sensor</h3>
       <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-4)', fontSize: 'var(--type-small)' }}>
-        Scan this QR code with a mobile phone to stream its accelerometer data directly to this dashboard.
+        Scan this QR code with a mobile phone to stream its accelerometer data directly to this dashboard over WebRTC.
       </p>
       
       <div style={{ background: 'white', padding: '16px', borderRadius: '8px' }}>
         <QRCode value={url} size={150} />
       </div>
       
-      <p style={{ marginTop: 'var(--space-4)', fontSize: 'var(--type-caption)', color: 'var(--text-muted)' }}>
-        {url}
-      </p>
+      {!peerId && (
+        <p style={{ marginTop: 'var(--space-4)', fontSize: 'var(--type-caption)', color: 'var(--colour-warning)' }}>
+          Generating P2P connection...
+        </p>
+      )}
     </div>
   );
 };
