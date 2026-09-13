@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import { Header } from './components/layout/Header';
 import { PageShell } from './components/layout/PageShell';
 import { OverviewPage } from './pages/OverviewPage';
@@ -17,7 +17,7 @@ export const App: React.FC = () => {
   }, [loadInitialData]);
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Header />
       <PageShell>
         <React.Suspense fallback={<div>Loading Live Sensor...</div>}>
@@ -29,6 +29,6 @@ export const App: React.FC = () => {
           </Routes>
         </React.Suspense>
       </PageShell>
-    </BrowserRouter>
+    </HashRouter>
   );
 };

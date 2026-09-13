@@ -1,0 +1,9 @@
+@keyframes skeleton-pulse-anim {
+  0% { opacity: 1; }
+  50% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+.skeleton-pulse {
+  animation: skeleton-pulse-anim 1.5s ease-in-out infinite;
+}

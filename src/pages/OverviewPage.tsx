@@ -12,7 +12,7 @@ export const OverviewPage: React.FC = () => {
       <h1 className="sr-only">Overview</h1>
       <DemoController />
       <StatCardRow />
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-6)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 'var(--space-6)' }}>
         <SectorMap />
         <TrendGraph />
       </div>
