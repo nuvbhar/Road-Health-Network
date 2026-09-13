@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { SensorCanvas } from '../components/sensor/SensorCanvas';
 import { TransmissionPipeline } from '../components/pipeline/TransmissionPipeline';
@@ -6,20 +6,53 @@ import { PrivacyPanel } from '../components/privacy/PrivacyPanel';
 import { ConfidenceGauge } from '../components/sensor/ConfidenceGauge';
 import { PairingQR } from '../components/sensor/PairingQR';
 import { SmartphoneIcon } from '../components/shared/Icons';
+import { Button } from '../components/shared/Button';
+import { requestSensorAccess, startSensorStream } from '../services/sensorBridge';
+import { processSensorReading } from '../services/detectionEngine';
 
 export const LiveSensorPage: React.FC = () => {
   const [activeDevice, setActiveDevice] = useState<string | null>(null);
+  const [localActive, setLocalActive] = useState(false);
+  const stopStreamRef = useRef<(() => void) | null>(null);
+  
+  const setSensorReading = useAppStore(state => state.setSensorReading);
+  const setSensorEvent = useAppStore(state => state.setSensorEvent);
 
-  // When a sensor connects or sends data, it updates the liveSensor store.
-  // The 'connected' boolean is unfortunately not auto-toggled by ws.ts for just ANY client yet,
-  // but if we receive a reading, we know it's connected.
   const reading = useAppStore(state => state.liveSensor.reading);
   
   useEffect(() => {
     if (reading && !activeDevice) {
-      setActiveDevice('Mobile Sensor Node');
+      setActiveDevice(localActive ? 'This Device (Local)' : 'External Sensor Node');
     }
-  }, [reading, activeDevice]);
+  }, [reading, activeDevice, localActive]);
+
+  useEffect(() => {
+    return () => {
+      if (stopStreamRef.current) stopStreamRef.current();
+    };
+  }, []);
+
+  const handleLocalToggle = async () => {
+    if (localActive) {
+      if (stopStreamRef.current) stopStreamRef.current();
+      stopStreamRef.current = null;
+      setLocalActive(false);
+      setActiveDevice(null);
+    } else {
+      const granted = await requestSensorAccess();
+      if (!granted) {
+        alert("Accelerometer access denied. Please grant permission.");
+        return;
+      }
+      setLocalActive(true);
+      setActiveDevice('This Device (Local)');
+      
+      stopStreamRef.current = startSensorStream((r) => {
+        setSensorReading(r);
+        processSensorReading(r, setSensorEvent);
+      });
+    }
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
@@ -48,6 +81,15 @@ export const LiveSensorPage: React.FC = () => {
             <span style={{ fontWeight: 500 }}>
               {activeDevice ? `Connected: ${activeDevice}` : 'No active sensor devices'}
             </span>
+          </div>
+
+          <div style={{ marginTop: 'var(--space-4)' }}>
+            <Button variant={localActive ? "danger" : "secondary"} onClick={handleLocalToggle}>
+              {localActive ? "Stop Local Test" : "Test on this device"}
+            </Button>
+            <p style={{ marginTop: 'var(--space-2)', fontSize: 'var(--type-caption)', color: 'var(--text-muted)' }}>
+              Useful if you are visiting this dashboard directly from a mobile device without a backend server.
+            </p>
           </div>
         </div>
 

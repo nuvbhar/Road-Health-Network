@@ -5,10 +5,11 @@ export const PairingQR: React.FC = () => {
   const [url, setUrl] = useState('');
 
   useEffect(() => {
-    // Determine the local IP dynamically if possible, or just use host
-    const host = window.location.host;
-    const protocol = window.location.protocol;
-    setUrl(`${protocol}//${host}/sensor`);
+    // Generate the correct URL depending on whether we are using HashRouter or base paths
+    const origin = window.location.origin;
+    const pathname = window.location.pathname;
+    // Ensure we point to the #/sensor route regardless of current hash
+    setUrl(`${origin}${pathname}#/sensor`);
   }, []);
 
   if (!url) return null;
