@@ -50,20 +50,32 @@ export function processSensorReading(
   }
 
   if (zForce > ABSOLUTE_THRESHOLD && !cooldown) {
-    // 4. Contextual Logic:
-    // If the road is already bumpy (high stdDev), SNR is low.
-    // If the road is smooth (low stdDev), SNR is very high.
-    if (snr > 3.0) { // The spike must stand out clearly from the background noise
+    // 4. Contextual Logic & Classification
+    // If SNR > 3.0, the spike stands out clearly from the background noise.
+    if (snr > 3.0) {
       cooldown = true;
       
+      // Determine Classification based on the direction of the initial breakout:
+      // - If Z drops below the mean first, the tire is falling into a void -> POTHOLE
+      // - If Z shoots above the mean first, the tire is hitting a ramp -> SPEED_BUMP
+      const isNegativeSpike = rawZ < meanZ;
+      let type: string;
+      
+      if (isNegativeSpike) {
+        // It's a pothole. Check severity.
+        type = zForce > 2.5 ? 'SEVERE_POTHOLE' : 'POTENTIAL_POTHOLE';
+      } else {
+        // Positive spike first.
+        type = 'SPEED_BUMP';
+      }
+
       // Map SNR dynamically to a Confidence %
       // snr=3.0 -> ~40%, snr=8.0+ -> ~98%
       let confidence = Math.min(98, Math.floor(40 + ((snr - 3.0) * 12)));
       
-      // If the sheer physical force is massive, boost confidence slightly
+      // Boost confidence if the sheer physical force is massive
       if (zForce > 2.0) confidence = Math.min(99, confidence + 10);
       
-      const type = zForce > 2.5 ? 'SEVERE_POTHOLE' : 'POTENTIAL_POTHOLE';
       const weight = parseFloat(zForce.toFixed(2));
       
       onEvent({
@@ -74,7 +86,7 @@ export function processSensorReading(
         timestamp: Date.now()
       });
       
-      // 2.5 second cooldown prevents double-counting the suspension rebound
+      // Cooldown prevents double-counting the rebound/landing of the same event
       setTimeout(() => {
         cooldown = false;
       }, 2500);

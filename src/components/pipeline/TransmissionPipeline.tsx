@@ -24,15 +24,22 @@ export const TransmissionPipeline: React.FC = () => {
           if (event && event.type) {
             const uuid = crypto.randomUUID ? crypto.randomUUID() : 'User-' + Math.floor(Math.random() * 9999999);
             useAppStore.getState().addReport({
+              id: `RPT-LIVE-${Math.floor(Math.random() * 9000)}`,
+              reportDate: new Date().toISOString(),
               type: event.type as any,
               confidence: event.confidence,
               weight: event.weight || 0,
               source: 'VEHICLE_SENSOR',
               vehicleRef: uuid,
-              latitude: 30.75 + (Math.random() * 0.01), // mock lat
-              longitude: 76.64 + (Math.random() * 0.01), // mock lng
-              status: 'pending'
-            }).catch(e => console.warn('Failed to push to DB (no backend running?):', e));
+              sectorId: 'SEC-B',
+              sectorName: 'Kharar-CU Sector B',
+              roadReference: 'Live Demo Route',
+              latitude: 30.748 + (Math.random() * 0.005),
+              longitude: 76.645 + (Math.random() * 0.005),
+              status: 'pending',
+              independentReports: 1,
+              reportingVehicles: [uuid]
+            }).catch(e => console.warn('Failed to push to DB:', e));
           }
           
           // Reset after a while

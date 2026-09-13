@@ -62,24 +62,32 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.7);
   font-size: var(--type-caption);
+  font-weight: 600;
   text-decoration: none;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-light);
-  background-color: var(--bg-surface);
-  transition: all 0.2s ease;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background-color: rgba(255, 255, 255, 0.05);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .debugLink:hover {
-  background-color: var(--bg-hover);
-  color: var(--text-primary);
-  border-color: var(--accent);
+  background-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.debugLink:active {
+  transform: scale(0.95);
 }
 
 .debugLink.active {
-  background-color: rgba(67, 97, 238, 0.1);
-  color: var(--accent);
+  background-color: var(--accent);
+  color: #ffffff;
   border-color: var(--accent);
+  box-shadow: 0 0 16px rgba(67, 97, 238, 0.5); /* Strong blue glow */
 }

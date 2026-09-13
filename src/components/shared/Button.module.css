@@ -58,8 +58,15 @@
   font-size: var(--type-caption);
   min-height: 44px;
 }
-.danger.hover { background-color: var(--colour-danger-light); }
-.danger.active { transform: scale(0.98); }
+.danger.hover { 
+  background-color: var(--colour-danger); 
+  color: var(--text-inverse);
+}
+.danger.active { 
+  background-color: #d11f26; /* Darker red */
+  color: var(--text-inverse);
+  transform: scale(0.96); 
+}
 
 /* Filter Pill */
 .filter {

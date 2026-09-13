@@ -21,5 +21,11 @@ export const REPORT_TYPES: Record<ReportType, ReportTypeDef> = {
     icon: <AlertTriangleIcon width={16} height={16} />,
     color: 'var(--colour-danger)',
     description: 'Deep and dangerous crater in the road surface.'
+  },
+  SPEED_BUMP: {
+    label: 'Speed Bump',
+    icon: <AlertTriangleIcon width={16} height={16} />,
+    color: 'var(--colour-info)',
+    description: 'Raised bump on the road surface.'
   }
 };

@@ -33,7 +33,7 @@ export const mockSectors: Sector[] = Array.from({ length: 12 }, (_, i) => {
 });
 
 const reportTypes: Report['type'][] = [
-  'POTENTIAL_POTHOLE', 'SEVERE_POTHOLE'
+  'POTENTIAL_POTHOLE', 'SEVERE_POTHOLE', 'SPEED_BUMP'
 ];
 
 function generateMockUUID() {
