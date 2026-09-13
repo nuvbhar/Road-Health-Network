@@ -27,7 +27,7 @@ let captureBuffer: number[] = [];
 const CAPTURE_FRAMES = 15; // ~500ms at 30Hz
 
 // Minimum absolute G-force deviation required to even consider it an anomaly
-const ABSOLUTE_THRESHOLD = 0.8;
+const ABSOLUTE_THRESHOLD = 0.3;
 const VARIANCE_SMOOTHING = 0.05;
 
 // Context snapshots for SNR
@@ -54,8 +54,7 @@ async function classifyEvent(sequence: number[], peakToPeak: number, windowSnr: 
     const pNoise = probs[2];
 
     if (pNoise > 0.6) {
-      console.debug("[Engine] AI classified event as noise. Suppressing.");
-      return;
+      console.debug(`[Engine] AI classified event as noise (prob: ${pNoise.toFixed(2)}). Emitting anyway for debug.`);
     }
 
     type = pPothole > pSpeedbump ? "POTENTIAL_POTHOLE" : "SPEED_BUMP";
@@ -117,15 +116,9 @@ export function processSensorReading(
   const rawZ = reading.accelerometer.z;
   const currentSpeed = reading.gps?.speed ?? null;
 
-  // Abort if phone is tumbling wildly
-  const isTumbling =
-    Math.abs(reading.gyroscope.x) > 2.5 ||
-    Math.abs(reading.gyroscope.y) > 2.5 ||
-    Math.abs(reading.gyroscope.z) > 2.5;
-
   zBuffer.push(rawZ);
   if (zBuffer.length > WINDOW_SIZE) zBuffer.shift();
-  if (zBuffer.length < WINDOW_SIZE || isTumbling) return;
+  if (zBuffer.length < WINDOW_SIZE) return;
 
   const meanZ = zBuffer.reduce((sum, val) => sum + val, 0) / zBuffer.length;
   const variance = zBuffer.reduce((sum, val) => sum + Math.pow(val - meanZ, 2), 0) / zBuffer.length;
@@ -144,7 +137,7 @@ export function processSensorReading(
   }
 
   if (engineState === "IDLE") {
-    if (zForce > dynamicThreshold && snr > 3.0) {
+    if (zForce > dynamicThreshold && snr > 1.5) {
       engineState = "CAPTURING";
       captureBuffer = zBuffer.slice(-5);
       triggerMean = meanZ;
@@ -165,7 +158,7 @@ export function processSensorReading(
       const maxDeviation = Math.max(Math.abs(maxZ - triggerMean), Math.abs(minZ - triggerMean));
       const windowSnr = maxDeviation / (triggerStdDev + VARIANCE_SMOOTHING);
 
-      const sequence = [...captureBuffer];
+      const sequence = captureBuffer.map(z => z - triggerMean);
       const captureSpeed = triggerSpeed;
 
       engineState = "COOLDOWN";
