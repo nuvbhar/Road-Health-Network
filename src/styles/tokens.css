@@ -1,0 +1,85 @@
+:root {
+  /* 2.1 Background Layers */
+  --bg-page: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #F1F5F9;
+  --bg-inset: #E2E8F0;
+  --bg-header: #1E293B;
+  --bg-header-accent: #0F172A;
+
+  /* 2.2 Text Hierarchy */
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #94A3B8;
+  --text-inverse: #FFFFFF;
+  --text-link: #2563EB;
+
+  /* 2.3 Semantic Colours */
+  --colour-ok: #16A34A;
+  --colour-ok-light: #DCFCE7;
+  --colour-ok-border: #86EFAC;
+  --colour-warning: #D97706;
+  --colour-warning-light: #FEF3C7;
+  --colour-warning-border: #FCD34D;
+  --colour-danger: #DC2626;
+  --colour-danger-light: #FEE2E2;
+  --colour-danger-border: #FCA5A5;
+  --colour-info: #2563EB;
+  --colour-info-light: #DBEAFE;
+  --colour-info-border: #93C5FD;
+
+  /* 2.4 Chart / Graph Colours */
+  --graph-line: #3B82F6;
+  --graph-line-alert: #D97706;
+  --graph-grid: #E2E8F0;
+  --graph-fill: rgba(59, 130, 246, 0.08);
+  --graph-fill-alert: rgba(217, 119, 6, 0.08);
+
+  /* 2.5 Accent / Brand */
+  --accent: #2563EB;
+  --accent-hover: #1D4ED8;
+  --accent-light: #EFF6FF;
+
+  /* 2.6 Borders & Dividers */
+  --border-light: #E2E8F0;
+  --border-default: #CBD5E1;
+  --border-strong: #94A3B8;
+
+  /* 3.2 Type Scale */
+  --type-display: clamp(1.5rem, 2vw, 1.875rem);
+  --type-heading: clamp(1.125rem, 1.5vw, 1.375rem);
+  --type-subheading: 0.8125rem;
+  --type-body: 0.875rem;
+  --type-caption: 0.75rem;
+  --type-stat: clamp(1.5rem, 2vw, 2rem);
+  --type-data: 0.875rem;
+  --type-data-sm: 0.75rem;
+
+  /* 4. Spacing System */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* 8.1 Timing Curves */
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+
+  /* 8.2 Duration Scale */
+  --duration-instant: 100ms;
+  --duration-fast: 200ms;
+  --duration-normal: 300ms;
+  --duration-slow: 600ms;
+  --duration-counter: 800ms;
+
+  /* Radii */
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-full: 999px;
+}

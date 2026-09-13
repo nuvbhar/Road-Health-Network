@@ -1,0 +1,66 @@
+.card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+  position: relative;
+  overflow: hidden;
+  flex: 1;
+  min-width: 160px;
+}
+
+.card.hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+/* Left accent bar */
+.card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+}
+
+.info::before { background-color: var(--colour-info); }
+.warning::before { background-color: var(--colour-warning); }
+.danger::before { background-color: var(--colour-danger); }
+.ok::before { background-color: var(--colour-ok); }
+
+.iconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.info .icon { color: var(--colour-info); }
+.warning .icon { color: var(--colour-warning); }
+.danger .icon { color: var(--colour-danger); }
+.ok .icon { color: var(--colour-ok); }
+
+.content {
+  display: flex;
+  flex-direction: column;
+}
+
+.value {
+  font-size: var(--type-stat);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: var(--space-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.label {
+  font-size: var(--type-caption);
+  color: var(--text-secondary);
+}

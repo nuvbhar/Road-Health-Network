@@ -1,0 +1,120 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(2px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+.modal {
+  background-color: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  width: 100%;
+  max-width: 600px;
+  overflow: hidden;
+  animation: slideUp var(--duration-normal) var(--ease-out);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--border-light);
+  background-color: var(--bg-page);
+}
+
+.title {
+  font-size: var(--type-heading);
+  font-weight: 700;
+  text-transform: capitalize;
+  margin-bottom: var(--space-1);
+}
+
+.id {
+  font-size: var(--type-caption);
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.closeBtn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-md);
+  transition: background-color var(--duration-fast);
+}
+
+.closeBtn:hover {
+  background-color: var(--bg-inset);
+  color: var(--text-primary);
+}
+
+.content {
+  padding: var(--space-6);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+}
+
+.label {
+  font-size: var(--type-caption);
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.value {
+  font-size: var(--type-body);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.confidenceScore {
+  font-size: var(--type-heading);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--colour-danger);
+}
+
+.corroboration {
+  font-size: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.actions {
+  border-top: 1px solid var(--border-light);
+  padding-top: var(--space-6);
+}
+
+.actionLabel {
+  font-size: var(--type-caption);
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-bottom: var(--space-3);
+}
+
+.actionGroup {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+}

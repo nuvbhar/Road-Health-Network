@@ -1,0 +1,82 @@
+.container {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.title {
+  font-weight: 600;
+  font-size: var(--type-body);
+}
+
+.status {
+  font-size: var(--type-caption);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.dotPulse {
+  width: 8px;
+  height: 8px;
+  background-color: var(--colour-ok);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.dotOffline {
+  width: 8px;
+  height: 8px;
+  background-color: var(--border-strong);
+  border-radius: 50%;
+}
+
+.canvasWrapper {
+  width: 100%;
+  height: 200px;
+  background-color: var(--bg-page);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.legend {
+  display: flex;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--type-caption);
+  color: var(--text-secondary);
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.legendZ {
+  width: 12px;
+  height: 2px;
+  background-color: var(--accent);
+}
+
+.legendY {
+  width: 12px;
+  height: 2px;
+  background-color: var(--colour-warning-border);
+}
