@@ -22,19 +22,19 @@ export const ConfidenceGauge: React.FC = () => {
       )
     : 0;
 
-  // Reset to 0 when confirmed, otherwise show event confidence or live intensity
-  const displayConfidence = isConfirmed ? 0 : (hasEvent ? (event?.confidence || 50) : liveIntensity);
+  // Always use live intensity so it never locks
+  const displayConfidence = liveIntensity;
 
   let colour = "var(--text-muted)";
-  if (isConfirmed) colour = "var(--colour-ok)"; // Show green when confirmed
-  else if (displayConfidence > 75) colour = "var(--colour-danger)";
+  if (displayConfidence > 75) colour = "var(--colour-danger)";
   else if (displayConfidence > 45) colour = "var(--colour-warning)";
   else if (displayConfidence > 12) colour = "var(--colour-ok)";
 
+  // The label displays database push status
   const label = isConfirmed
     ? "Saved to Database ✓"
-    : hasEvent
-    ? (event?.type ? event.type.replace(/_/g, " ") : "Anomaly Detected")
+    : stage !== "idle"
+    ? "Processing..."
     : displayConfidence > 50
     ? "High Impact Shock"
     : displayConfidence > 25
@@ -52,20 +52,34 @@ export const ConfidenceGauge: React.FC = () => {
         }}
       >
         <h3 className={styles.title} style={{ margin: 0 }}>
-          {isConfirmed ? "Transmission Complete" : (hasEvent ? "Detected Anomaly" : "Live Shock Gauge")}
+          Live Shock Gauge
         </h3>
-        {hasEvent && !isConfirmed && (
+        {isConfirmed && (
           <span
             style={{
               fontSize: "0.7rem",
               padding: "2px 6px",
               borderRadius: "4px",
-              backgroundColor: "rgba(220, 38, 38, 0.15)",
-              color: "var(--colour-danger)",
+              backgroundColor: "rgba(22, 163, 74, 0.15)",
+              color: "var(--colour-ok)",
               fontWeight: 700,
             }}
           >
-            LOCKED
+            SAVED ✓
+          </span>
+        )}
+        {!isConfirmed && stage !== "idle" && (
+          <span
+            style={{
+              fontSize: "0.7rem",
+              padding: "2px 6px",
+              borderRadius: "4px",
+              backgroundColor: "rgba(217, 119, 6, 0.15)",
+              color: "var(--colour-warning)",
+              fontWeight: 700,
+            }}
+          >
+            PUSHING...
           </span>
         )}
       </div>
