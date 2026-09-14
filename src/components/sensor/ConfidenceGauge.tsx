@@ -12,10 +12,10 @@ export const ConfidenceGauge: React.FC = () => {
   // When no event is locked, calculate live anomaly probability directly from instantaneous zForce and SNR
   const liveIntensity = metrics
     ? Math.min(
-        98,
+        99,
         Math.max(
-          4,
-          Math.round((metrics.zForce / 0.8) * 60 + Math.max(0, metrics.snr - 1) * 12),
+          0,
+          Math.round((metrics.zForce / 0.8) * 45 + Math.max(0, metrics.snr - 1.2) * 10),
         ),
       )
     : 0;

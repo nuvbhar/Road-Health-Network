@@ -29,7 +29,7 @@ let captureCountdown = 0;
 let cooldownFrames = 0;
 
 // Minimum absolute G-force deviation required to consider an anomaly
-const ABSOLUTE_THRESHOLD = 0.28;
+const ABSOLUTE_THRESHOLD = 0.35; // increased from 0.28 to decrease sensitivity
 const VARIANCE_SMOOTHING = 0.04;
 
 // Context snapshots for SNR
@@ -157,7 +157,7 @@ export function processSensorReading(
 
   if (engineState === "IDLE") {
     // Fast trigger on immediate spike
-    if ((zForce > dynamicThreshold && snr > 1.35) || zForce > 0.55) {
+    if ((zForce > dynamicThreshold && snr > 1.5) || zForce > 0.65) {
       engineState = "CAPTURING";
       captureCountdown = 4; // Wait only ~130ms (4 frames) for crest/bounce
       triggerMean = meanZ;
