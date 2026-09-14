@@ -7,19 +7,21 @@ export interface PermissionsStatus {
 }
 
 export async function requestMotionAccess(): Promise<boolean> {
-  if (
-    typeof (DeviceMotionEvent as any) !== "undefined" &&
-    typeof (DeviceMotionEvent as any).requestPermission === "function"
-  ) {
+  if (typeof (window as any).DeviceMotionEvent === "undefined") {
+    return false; // No motion sensor support (e.g., desktop)
+  }
+
+  if (typeof (window as any).DeviceMotionEvent.requestPermission === "function") {
     try {
-      const permissionState = await (DeviceMotionEvent as any).requestPermission();
+      const permissionState = await (window as any).DeviceMotionEvent.requestPermission();
       return permissionState === "granted";
     } catch (err) {
       console.error(err);
       return false;
     }
   }
-  // Non-iOS 13+ generally do not require explicit prompt for motion
+  
+  // Non-iOS 13+ mobile devices
   return true;
 }
 
