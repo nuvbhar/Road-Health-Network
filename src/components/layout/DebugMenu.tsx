@@ -16,16 +16,21 @@ export const DebugMenu: React.FC = () => {
   const loadInitialData = useAppStore((state) => state.loadInitialData);
   const existingReports = useAppStore((state) => state.reports);
 
+  const [testScenario, setTestScenario] = useState<"random" | "degradation" | "rhi" | "trust">("random");
+
   const handlePopulate = async () => {
     setLoading(true);
     try {
-      // Basic mock sectors
+      const { createReport } = await import("../../services/api");
+
+      // Basic mock sectors (ensure they exist)
       const mockSectors = [
         {
           id: "SEC-A",
           name: "Sector A",
           displayName: "Kharar-CU Sector A",
           status: "monitoring",
+          healthIndex: 100.0,
           reportCount: 0,
           confidence: 90,
           startLat: 30.741,
@@ -38,6 +43,7 @@ export const DebugMenu: React.FC = () => {
           name: "Sector B",
           displayName: "Kharar-CU Sector B",
           status: "monitoring",
+          healthIndex: 100.0,
           reportCount: 0,
           confidence: 85,
           startLat: 30.725,
@@ -46,98 +52,135 @@ export const DebugMenu: React.FC = () => {
           endLng: 76.603,
         },
       ];
+      await supabase.from("sectors").upsert(mockSectors);
 
-      // Upsert sectors first to ensure foreign keys are valid
-      const { error: sectorErr } = await supabase.from("sectors").upsert(mockSectors);
-      if (sectorErr) throw sectorErr;
-
-      const allReports = [...existingReports];
-      const reportsToUpsert = new Map();
-      const generatedReportVehicles = [];
-
-      for (let i = 0; i < mockCount; i++) {
-        // 60% chance to corroborate if reports exist, otherwise 100% chance to create new
-        const shouldCorroborate = allReports.length > 0 && Math.random() > 0.4;
-
-        if (shouldCorroborate) {
-          // Corroborate an existing report
-          const target = allReports[Math.floor(Math.random() * allReports.length)];
-          const vRef = `V-MOCK-${Math.floor(Math.random() * 99999)}`;
-          
-          generatedReportVehicles.push({ reportId: target.id, vehicleRef: vRef });
-          
-          const updatedTarget = {
-            ...target,
-            independentReports: (target.independentReports || 1) + 1,
-          };
-          
-          // Auto-escalation local sim
-          if (updatedTarget.independentReports >= 3 && updatedTarget.status === "pending") {
-            updatedTarget.status = "under_review";
-          }
-
-          // Replace in local array so it can be corroborated again
-          const idx = allReports.findIndex(r => r.id === target.id);
-          if (idx !== -1) allReports[idx] = updatedTarget;
-
-          reportsToUpsert.set(target.id, updatedTarget);
-        } else {
-          // Create new report
+      if (testScenario === "random") {
+        for (let i = 0; i < mockCount; i++) {
           const sector = Math.random() > 0.5 ? mockSectors[0] : mockSectors[1];
-          const rptId = `RPT-${Math.floor(Math.random() * 90000) + 10000}`;
-          const types = ["ROAD_ANOMALY", "TRAFFIC_HAZARD", "POTENTIAL_POTHOLE", "SEVERE_POTHOLE"];
-          const type = types[Math.floor(Math.random() * types.length)];
-          
           const bases = [
-            { lat: 30.7414, lng: 76.6433 }, // Kharar
-            { lat: 30.7333, lng: 76.7794 }, // Chandigarh
-            { lat: 30.6908, lng: 76.7126 }, // Mohali
+            { lat: 30.7414, lng: 76.6433 },
+            { lat: 30.7333, lng: 76.7794 },
           ];
           const base = bases[Math.floor(Math.random() * bases.length)];
+          const type = Math.random() > 0.3 ? "POTENTIAL_POTHOLE" : "ROAD_ANOMALY";
           
-          const lat = base.lat + (Math.random() - 0.5) * 0.08;
-          const lng = base.lng + (Math.random() - 0.5) * 0.08;
-          const vehicleRef = `V-MOCK-${Math.floor(Math.random() * 99999)}`;
-
-          const newReport = {
-            id: rptId,
+          await createReport({
+            type,
             sectorId: sector.id,
             sectorName: sector.displayName,
-            roadReference: `Mocked Road ${i}`,
-            type,
+            latitude: base.lat + (Math.random() - 0.5) * 0.05,
+            longitude: base.lng + (Math.random() - 0.5) * 0.05,
+            weight: Number((Math.random() * 3 + 1).toFixed(1)),
             confidence: Math.floor(Math.random() * 40) + 60,
-            weight: Number((Math.random() * 5).toFixed(1)),
-            source: "VEHICLE_SENSOR",
-            vehicleRef,
-            status: "pending",
-            latitude: Number(lat.toFixed(5)),
-            longitude: Number(lng.toFixed(5)),
-            independentReports: 1,
-            reportDate: new Date(Date.now() - Math.floor(Math.random() * 86400000)).toISOString(),
-          };
+            vehicleRef: `V-RANDOM-${Math.floor(Math.random() * 999)}`,
+          });
+        }
+      } 
+      else if (testScenario === "degradation") {
+        // Create an initial pothole, then have 3 vehicles report it with increasing weight
+        const baseLat = 30.742;
+        const baseLng = 76.612;
+        
+        // Initial report
+        await createReport({
+          type: "POTENTIAL_POTHOLE",
+          sectorId: "SEC-A",
+          latitude: baseLat,
+          longitude: baseLng,
+          weight: 1.5,
+          vehicleRef: "V-DEG-1",
+        });
 
-          allReports.push(newReport as any);
-          reportsToUpsert.set(newReport.id, newReport);
-          generatedReportVehicles.push({ reportId: rptId, vehicleRef });
+        // Corroborations with higher weight
+        for (let i = 2; i <= 4; i++) {
+          await new Promise(r => setTimeout(r, 500)); // slight delay to avoid race conditions
+          await createReport({
+            type: "POTENTIAL_POTHOLE",
+            sectorId: "SEC-A",
+            latitude: baseLat + 0.0001, // Close enough to corroborate
+            longitude: baseLng + 0.0001,
+            weight: 1.5 + (i * 1.0), // Weight increasing rapidly!
+            vehicleRef: `V-DEG-${i}`,
+          });
         }
       }
+      else if (testScenario === "rhi") {
+        // Bombard Sector A with severe potholes
+        for (let p = 0; p < 5; p++) {
+          const pLat = 30.75 + (Math.random() * 0.01);
+          const pLng = 76.62 + (Math.random() * 0.01);
+          
+          for (let v = 1; v <= 3; v++) {
+            await createReport({
+              type: "SEVERE_POTHOLE",
+              sectorId: "SEC-A",
+              latitude: pLat,
+              longitude: pLng,
+              weight: 5.0,
+              vehicleRef: `V-RHI-${v}`,
+            });
+          }
+        }
+      }
+      else if (testScenario === "trust") {
+        // Create a known spammer vehicle
+        await supabase.from("vehicles").upsert({
+          id: "V-SPAMMER",
+          sectorId: "SEC-B",
+          status: "active",
+          trustScore: 10,
+          unverifiedReports: 50,
+          lastSeenAt: new Date().toISOString()
+        });
 
-      // Prepare final array to upsert (omitting local-only fields that Supabase doesn't know)
-      const reportsArray = Array.from(reportsToUpsert.values()).map(r => {
-        const { reportingVehicles, ...dbFields } = r as any;
-        return dbFields;
-      });
+        // Try to report from spammer
+        await createReport({
+          type: "SEVERE_POTHOLE",
+          sectorId: "SEC-B",
+          latitude: 30.730,
+          longitude: 76.600,
+          weight: 4.0,
+          vehicleRef: "V-SPAMMER",
+        });
+      }
+      else if (testScenario === "calibration") {
+        // Vehicle A: Heavy Truck (Calibration Factor = 0.5)
+        await supabase.from("vehicles").upsert({
+          id: "V-TRUCK",
+          sectorId: "SEC-A",
+          status: "active",
+          calibrationFactor: 0.5,
+          lastSeenAt: new Date().toISOString()
+        });
+        
+        await createReport({
+          type: "ROAD_ANOMALY",
+          sectorId: "SEC-A",
+          latitude: 30.741,
+          longitude: 76.603,
+          weight: 2.0, // The physical bump is 2.0 (but sensor read 4.0, calibrated down)
+          vehicleRef: "V-TRUCK",
+        });
 
-      if (reportsArray.length > 0) {
-        const { error: reportErr } = await supabase.from("reports").upsert(reportsArray);
-        if (reportErr) throw reportErr;
+        // Vehicle B: Sports Car (Calibration Factor = 1.5)
+        await supabase.from("vehicles").upsert({
+          id: "V-SPORTSCAR",
+          sectorId: "SEC-A",
+          status: "active",
+          calibrationFactor: 1.5,
+          lastSeenAt: new Date().toISOString()
+        });
+
+        await createReport({
+          type: "ROAD_ANOMALY",
+          sectorId: "SEC-A",
+          latitude: 30.742,
+          longitude: 76.604,
+          weight: 2.0, // Same physical bump (sensor read 1.33, calibrated up)
+          vehicleRef: "V-SPORTSCAR",
+        });
       }
 
-      if (generatedReportVehicles.length > 0) {
-        const { error: rvErr } = await supabase.from("report_vehicles").upsert(generatedReportVehicles);
-        if (rvErr) throw rvErr;
-      }
-      
       await loadInitialData();
       setConfirmAction(null);
       setIsOpen(false);
@@ -175,30 +218,49 @@ export const DebugMenu: React.FC = () => {
       return (
         <div className={styles.confirmBox}>
           <p className={styles.confirmText}>
-            Are you sure you want to trigger <strong>{mockCount}</strong> mock events? 
-            Each event will either create a new report or corroborate an existing one.
+            Select a specific test scenario to generate mock data.
           </p>
-          <div className={styles.sliderContainer}>
-            <div className={styles.sliderHeader}>
-              <span className={styles.sliderLabel}>Events to trigger</span>
-              <span className={styles.sliderValue}>{mockCount}</span>
-            </div>
-            <input 
-              type="range" 
-              min="1" 
-              max="50" 
-              value={mockCount} 
-              onChange={(e) => setMockCount(parseInt(e.target.value))}
-              className={styles.slider}
+
+          <div className={styles.scenarioSelect}>
+            <label>Test Scenario:</label>
+            <select 
+              value={testScenario} 
+              onChange={(e) => setTestScenario(e.target.value as any)}
               disabled={loading}
-            />
+              style={{ width: '100%', padding: '8px', margin: '8px 0', background: 'var(--colour-surface)', color: 'var(--colour-text)', border: '1px solid var(--colour-border)' }}
+            >
+              <option value="random">Random Distribution</option>
+              <option value="degradation">Test Pothole Degradation</option>
+              <option value="rhi">Test RHI Tanking (Sector A)</option>
+              <option value="trust">Test Trust Scoring (Spammer)</option>
+              <option value="calibration">Test Auto-Calibration</option>
+            </select>
           </div>
+
+          {testScenario === "random" && (
+            <div className={styles.sliderContainer}>
+              <div className={styles.sliderHeader}>
+                <span className={styles.sliderLabel}>Events to trigger</span>
+                <span className={styles.sliderValue}>{mockCount}</span>
+              </div>
+              <input 
+                type="range" 
+                min="1" 
+                max="50" 
+                value={mockCount} 
+                onChange={(e) => setMockCount(parseInt(e.target.value))}
+                className={styles.slider}
+                disabled={loading}
+              />
+            </div>
+          )}
+
           <div className={styles.confirmActions}>
             <Button variant="secondary" onClick={() => setConfirmAction(null)} disabled={loading}>
               Cancel
             </Button>
             <Button variant="primary" onClick={handlePopulate} disabled={loading}>
-              {loading ? "Working..." : "Confirm"}
+              {loading ? "Working..." : "Run Test"}
             </Button>
           </div>
         </div>
