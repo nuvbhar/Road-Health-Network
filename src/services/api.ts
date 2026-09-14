@@ -189,10 +189,10 @@ export async function createReport(
   const { data: vehicleData } = await supabase.from("vehicles").select("trustScore, unverifiedReports").eq("id", vehicleRef);
   const vehicle = vehicleData?.[0] || { trustScore: 100.0, unverifiedReports: 0 };
   
-  // if (vehicle.trustScore < 30) {
-  //   console.warn(`[Trust System] Dropping report from low-trust vehicle: ${vehicleRef}`);
-  //   return { id: "rejected-low-trust", corroborated: false, isConfirmed: false };
-  // }
+  if (vehicle.trustScore < 10) {
+    console.warn(`[Trust System] Dropping report from low-trust vehicle: ${vehicleRef}`);
+    return { id: "rejected-low-trust", corroborated: false, isConfirmed: false };
+  }
 
   // 1. Fetch active reports to evaluate spatial confirmation across fleet vehicles
   const { data: activeRows } = await supabase
@@ -208,11 +208,17 @@ export async function createReport(
       timestamp: v.timestamp,
       offsetMeters: v.offsetMeters
     })),
-    waveformData: Array.isArray(r.waveformData)
-      ? r.waveformData
-      : typeof r.waveformData === "string"
-      ? JSON.parse(r.waveformData)
-      : null,
+    waveformData: (() => {
+      if (Array.isArray(r.waveformData)) return r.waveformData;
+      if (typeof r.waveformData === "string") {
+        try {
+          return JSON.parse(r.waveformData);
+        } catch {
+          return null;
+        }
+      }
+      return null;
+    })(),
     correlationScore: r.correlationScore ?? null,
     isConfirmed: Boolean(r.isConfirmed),
   }));
@@ -342,9 +348,9 @@ export async function createReport(
   }
 
   // --- HACKATHON: Trust Scoring (Unverified) ---
-  // const newTrust = Math.max(0, vehicle.trustScore - 0.5); // Slight penalty for unverified
-  // const newUnverified = vehicle.unverifiedReports + 1;
-  // await supabase.from("vehicles").update({ trustScore: newTrust, unverifiedReports: newUnverified }).eq("id", vehicleRef);
+  const newTrust = Math.max(0, vehicle.trustScore - 0.05); // Very slight penalty for mock hardware testing
+  const newUnverified = vehicle.unverifiedReports + 1;
+  await supabase.from("vehicles").update({ trustScore: newTrust, unverifiedReports: newUnverified }).eq("id", vehicleRef);
 
   const sectorId = data.sectorId || "SEC-A";
   recalculateSectorHealth(sectorId).catch(console.error);

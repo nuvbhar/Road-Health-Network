@@ -15,12 +15,10 @@ tf.loadLayersModel("/model/model.json")
     aiModel = m;
     console.log("[Engine] TensorFlow.js 1D-CNN Model loaded successfully.");
   })
-  .catch((e) =>
-    console.error(
-      "[Engine] Failed to load AI model, falling back to heuristic:",
-      e,
-    ),
-  );
+  .catch((e) => {
+    console.error("[Engine] Failed to load AI model, falling back to heuristic:", e);
+    // Ideally this would dispatch to a centralized error store
+  });
 
 // State Machine for Waveform Window Capture
 type EngineState = "IDLE" | "CAPTURING" | "COOLDOWN";
