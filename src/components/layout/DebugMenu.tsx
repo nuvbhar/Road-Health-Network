@@ -58,11 +58,11 @@ export const DebugMenu: React.FC = () => {
         const availableSectors = (dbSectors && dbSectors.length > 0) ? dbSectors : mockSectors;
 
         const { data: existingReportsDB } = await supabase.from("reports").select("id, type, sectorId, sectorName, latitude, longitude").neq("status", "resolved");
-        const allTypes: any[] = ["POTENTIAL_POTHOLE", "SEVERE_POTHOLE", "TRAFFIC_HAZARD"];
+        const allTypes: any[] = ["POTENTIAL_POTHOLE", "SEVERE_POTHOLE"];
         const promises = [];
 
         for (let i = 0; i < mockCount; i++) {
-          const shouldCorroborate = existingReportsDB && existingReportsDB.length > 0 && Math.random() < 0.4;
+          const shouldCorroborate = existingReportsDB && existingReportsDB.length > 0 && Math.random() < 0.85;
           
           let lat = 0;
           let lng = 0;
@@ -75,8 +75,8 @@ export const DebugMenu: React.FC = () => {
             type = target.type;
             sectorId = target.sectorId;
             sectorName = target.sectorName;
-            lat = target.latitude + (Math.random() - 0.5) * 0.0002; 
-            lng = target.longitude + (Math.random() - 0.5) * 0.0002;
+            lat = target.latitude + (Math.random() - 0.5) * 0.00008; 
+            lng = target.longitude + (Math.random() - 0.5) * 0.00008;
           } else {
             const sector = availableSectors[Math.floor(Math.random() * availableSectors.length)];
             type = allTypes[Math.floor(Math.random() * allTypes.length)];

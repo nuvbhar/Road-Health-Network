@@ -218,7 +218,7 @@ export async function createReport(
   for (const r of (activeReports || [])) {
     if (r.latitude && r.longitude) {
       const dist = getDistance(lat, lon, r.latitude, r.longitude);
-      if (dist <= 50) {
+      if (dist <= 3) {
         matchedReport = r;
         matchedDist = dist;
         break;

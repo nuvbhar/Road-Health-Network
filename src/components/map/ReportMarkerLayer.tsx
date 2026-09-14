@@ -28,9 +28,9 @@ export const ReportMarkerLayer: React.FC<ReportMarkerLayerProps> = ({
         if (typeInfo.color.includes("warning")) color = "#d97706";
         if (typeInfo.color.includes("info")) color = "#2563eb";
 
-        // Size by corroboration count (capped at 16px)
-        const vehicleCount = report.reportingVehicles?.length || 1;
-        const radius = Math.min(16, 6 + vehicleCount * 1.5); // Modified slightly for better visual scaling
+        const vehicleCount = report.independentReports || 1;
+        const isCorroborated = vehicleCount > 1;
+        const radius = isCorroborated ? 12 : 6; // Noticeably larger if corroborated
 
         return (
           <CircleMarker
