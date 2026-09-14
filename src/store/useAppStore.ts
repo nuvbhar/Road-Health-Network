@@ -62,7 +62,7 @@ interface AppState {
   loadInitialData: () => Promise<void>;
 }
 
-export const useAppStore = create<AppState>((set, get) => ({
+export const useAppStore = create<AppState>((set) => ({
   stats: {
     totalReports: 0,
     activeVehicles: 0,

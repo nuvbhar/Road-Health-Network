@@ -223,7 +223,7 @@ export const TransmissionPipeline: React.FC = () => {
                 fontSize: "0.85rem"
               }}>
                 <span style={{ fontWeight: 500, color: "var(--text-primary)" }}>
-                  {q.type.replace(/_/g, " ")}
+                  {q.type?.replace(/_/g, " ") || "Unknown Event"}
                 </span>
                 <span style={{ color: "var(--colour-warning)", fontFamily: "monospace", fontWeight: 700 }}>
                   {q.confidence}%
