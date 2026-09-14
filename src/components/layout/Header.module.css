@@ -29,7 +29,9 @@
   height: 32px;
   background-color: var(--accent);
   border-radius: var(--radius-md);
-  /* Placeholder for emblem */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .titleGroup {
