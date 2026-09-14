@@ -76,9 +76,12 @@ export const DebugMenu: React.FC = () => {
         }
       ];
 
-      // Insert sectors (will fail silently if they already exist due to PK constraint)
-      await supabase.from("sectors").upsert(mockSectors);
-      await supabase.from("reports").upsert(mockReports);
+      // Insert sectors and check for errors
+      const { error: sectorErr } = await supabase.from("sectors").upsert(mockSectors);
+      if (sectorErr) throw sectorErr;
+
+      const { error: reportErr } = await supabase.from("reports").upsert(mockReports);
+      if (reportErr) throw reportErr;
       
       alert("Database populated successfully!");
       loadInitialData(); // Refresh UI
