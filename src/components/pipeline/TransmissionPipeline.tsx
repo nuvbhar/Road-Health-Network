@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAppStore } from "../../store/useAppStore";
-import { CheckCircleIcon, AlertTriangleIcon, ActivityIcon, XIcon } from "../shared/Icons";
+import { CheckCircleIcon, AlertTriangleIcon, ActivityIcon, XIcon, MapIcon } from "../shared/Icons";
 import styles from "./TransmissionPipeline.module.css";
 import { getOrCreateDeviceId, registerDevice } from "../../services/deviceIdentity";
 
@@ -267,38 +267,92 @@ export const TransmissionPipeline: React.FC = () => {
                   Queue is currently empty
                 </div>
               ) : (
-                queue.map((q, i) => (
-                  <div key={i} style={{
-                    backgroundColor: "var(--bg-inset)",
-                    borderRadius: "var(--radius-md)",
-                    padding: "var(--space-4)",
-                    border: "1px solid var(--border-light)"
-                  }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "var(--space-2)" }}>
-                      <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                        {q.type?.replace(/_/g, " ") || "Unknown Event"}
-                      </span>
-                      <span style={{ color: "var(--colour-warning)", fontFamily: "monospace", fontWeight: 700 }}>
-                        {q.confidence}% Conf
-                      </span>
+                // Sort by confidence highest to lowest for triage priority
+                [...queue].sort((a, b) => b.confidence - a.confidence).map((q, i) => {
+                  const isHigh = q.confidence > 75;
+                  const isMed = q.confidence > 45 && !isHigh;
+                  
+                  const severityColor = isHigh ? "var(--colour-danger)" : isMed ? "var(--colour-warning)" : "var(--colour-ok)";
+                  const severityBg = isHigh ? "rgba(220, 38, 38, 0.1)" : isMed ? "rgba(217, 119, 6, 0.1)" : "rgba(22, 163, 74, 0.1)";
+
+                  return (
+                    <div key={i} style={{
+                      backgroundColor: "var(--bg-inset)",
+                      borderRadius: "var(--radius-md)",
+                      padding: "var(--space-3) var(--space-4)",
+                      border: "1px solid var(--border-light)",
+                      borderLeft: `4px solid ${severityColor}`,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "var(--space-2)",
+                      position: "relative"
+                    }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+                          <AlertTriangleIcon width={14} height={14} color={severityColor} />
+                          <span style={{ fontWeight: 600, color: "var(--text-primary)", fontSize: "0.9rem" }}>
+                            {q.type?.replace(/POTENTIAL_/g, "")?.replace(/_/g, " ") || "ANOMALY"}
+                          </span>
+                        </div>
+                        
+                        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
+                          <span style={{ 
+                            color: severityColor, 
+                            backgroundColor: severityBg,
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                            fontFamily: "monospace", 
+                            fontWeight: 700,
+                            fontSize: "0.85rem"
+                          }}>
+                            {q.confidence}%
+                          </span>
+                          <button 
+                            onClick={() => useAppStore.getState().removeSensorEventFromQueue(queue.indexOf(q))}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              color: "var(--text-muted)",
+                              cursor: "pointer",
+                              padding: "4px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              borderRadius: "4px"
+                            }}
+                            title="Dismiss from queue"
+                          >
+                            <XIcon width={14} height={14} />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div style={{ 
+                        display: "flex", 
+                        alignItems: "center", 
+                        justifyContent: "space-between",
+                        fontSize: "0.8rem", 
+                        color: "var(--text-secondary)" 
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+                          <MapIcon width={12} height={12} />
+                          <span style={{ fontFamily: "monospace" }}>
+                            {q.latitude?.toFixed(5) || "---"}, {q.longitude?.toFixed(5) || "---"}
+                          </span>
+                        </div>
+                        
+                        <div style={{ display: "flex", gap: "var(--space-4)", fontFamily: "monospace" }}>
+                          <span>
+                            {q.speed !== undefined && q.speed !== null ? `${(q.speed * 3.6).toFixed(1)} km/h` : "N/A"}
+                          </span>
+                          <span>
+                            {q.timestamp ? new Date(q.timestamp).toLocaleTimeString() : "N/A"}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-2)", fontSize: "0.85rem", color: "var(--text-secondary)" }}>
-                      <div>
-                        <strong>Lat:</strong> {q.latitude?.toFixed(5) || "N/A"}
-                      </div>
-                      <div>
-                        <strong>Lon:</strong> {q.longitude?.toFixed(5) || "N/A"}
-                      </div>
-                      <div>
-                        <strong>Speed:</strong> {q.speed !== undefined && q.speed !== null ? `${(q.speed * 3.6).toFixed(1)} km/h` : "N/A"}
-                      </div>
-                      <div>
-                        <strong>Time:</strong> {q.timestamp ? new Date(q.timestamp).toLocaleTimeString() : "N/A"}
-                      </div>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>

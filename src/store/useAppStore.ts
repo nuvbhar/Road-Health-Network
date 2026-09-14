@@ -54,6 +54,7 @@ interface AppState {
   setSensorEvent: (event: RoadEvent | null) => void;
   enqueueSensorEvent: (event: RoadEvent) => void;
   dequeueSensorEvent: () => void;
+  removeSensorEventFromQueue: (index: number) => void;
   setEngineMetrics: (metrics: EngineMetrics) => void;
   setTransmissionStage: (
     stage: "idle" | "processing" | "transmitted" | "confirmed",
@@ -124,6 +125,14 @@ export const useAppStore = create<AppState>((set) => ({
       const [nextEvent, ...rest] = state.liveSensor.queue;
       return {
         liveSensor: { ...state.liveSensor, event: nextEvent, queue: rest },
+      };
+    }),
+  removeSensorEventFromQueue: (index: number) =>
+    set((state) => {
+      const newQueue = [...state.liveSensor.queue];
+      newQueue.splice(index, 1);
+      return {
+        liveSensor: { ...state.liveSensor, queue: newQueue },
       };
     }),
   setEngineMetrics: (metrics) =>
