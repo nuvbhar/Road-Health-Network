@@ -1,12 +1,19 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { requestSensorAccess, startSensorStream } from "../services/sensorBridge";
+import { requestMotionAccess, requestGpsAccess, startSensorStream } from "../services/sensorBridge";
 import { useAppStore } from "../store/useAppStore";
 import { processSensorReading } from "../services/detectionEngine";
-import { PermissionsStatus } from "../services/sensorBridge";
+
+export type SensorCheckState = "idle" | "detecting" | "granted" | "failed";
+
+export interface SensorCheckStatus {
+  accelerometer: SensorCheckState;
+  gyroscope: SensorCheckState;
+  gps: SensorCheckState;
+}
 
 export function useLocalSensor(setActiveDevice: (device: string | null) => void, setLocalActive: (active: boolean) => void) {
   const [localState, setLocalState] = useState<"idle" | "scanning" | "streaming" | "unsupported">("idle");
-  const [permissions, setPermissions] = useState<PermissionsStatus | null>(null);
+  const [permissions, setPermissions] = useState<SensorCheckStatus | null>(null);
   const stopStreamRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
@@ -28,10 +35,32 @@ export function useLocalSensor(setActiveDevice: (device: string | null) => void,
     }
 
     setLocalState("scanning");
-    const status = await requestSensorAccess();
-    setPermissions(status);
+    setPermissions({
+      accelerometer: "detecting",
+      gyroscope: "detecting",
+      gps: "idle",
+    });
 
-    if (!status.accelerometer || !status.gyroscope || !status.gps) {
+    const motionGranted = await requestMotionAccess();
+    setPermissions(prev => ({
+      ...prev!,
+      accelerometer: motionGranted ? "granted" : "failed",
+      gyroscope: motionGranted ? "granted" : "failed",
+      gps: motionGranted ? "detecting" : "idle",
+    }));
+
+    if (!motionGranted) {
+      setLocalState("unsupported");
+      return;
+    }
+
+    const gpsGranted = await requestGpsAccess();
+    setPermissions(prev => ({
+      ...prev!,
+      gps: gpsGranted ? "granted" : "failed",
+    }));
+
+    if (!gpsGranted) {
       setLocalState("unsupported");
       return;
     }

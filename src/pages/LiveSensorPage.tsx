@@ -155,18 +155,38 @@ export const LiveSensorPage: React.FC = () => {
               style={{ color: "var(--border-default)", opacity: 0.5 }}
             />
             {permissions && (
-              <div style={{ fontSize: "0.85rem", display: "flex", flexDirection: "column", gap: "var(--space-2)", width: "100%", maxWidth: "200px" }}>
+              <div style={{ 
+                fontSize: "0.85rem", 
+                display: "flex", 
+                flexDirection: "column", 
+                gap: "var(--space-2)", 
+                width: "100%", 
+                maxWidth: "240px",
+                padding: "var(--space-3)",
+                backgroundColor: "var(--bg-inset)",
+                border: "1px dashed var(--border-default)",
+                borderRadius: "var(--radius-md)"
+              }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span style={{ color: "var(--text-secondary)" }}>Accelerometer</span>
-                  <span>{permissions.accelerometer ? "✅" : "❌"}</span>
+                  {permissions.accelerometer === "idle" && <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>waiting...</span>}
+                  {permissions.accelerometer === "detecting" && <span style={{ color: "var(--colour-warning)", fontStyle: "italic" }}>detecting...</span>}
+                  {permissions.accelerometer === "failed" && <span style={{ color: "var(--colour-danger)", fontStyle: "italic", fontWeight: 600 }}>failed</span>}
+                  {permissions.accelerometer === "granted" && <span>✅</span>}
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span style={{ color: "var(--text-secondary)" }}>Gyroscope</span>
-                  <span>{permissions.gyroscope ? "✅" : "❌"}</span>
+                  {permissions.gyroscope === "idle" && <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>waiting...</span>}
+                  {permissions.gyroscope === "detecting" && <span style={{ color: "var(--colour-warning)", fontStyle: "italic" }}>detecting...</span>}
+                  {permissions.gyroscope === "failed" && <span style={{ color: "var(--colour-danger)", fontStyle: "italic", fontWeight: 600 }}>failed</span>}
+                  {permissions.gyroscope === "granted" && <span>✅</span>}
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span style={{ color: "var(--text-secondary)" }}>Location (GPS)</span>
-                  <span>{permissions.gps ? "✅" : "❌"}</span>
+                  {permissions.gps === "idle" && <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>waiting...</span>}
+                  {permissions.gps === "detecting" && <span style={{ color: "var(--colour-warning)", fontStyle: "italic" }}>detecting...</span>}
+                  {permissions.gps === "failed" && <span style={{ color: "var(--colour-danger)", fontStyle: "italic", fontWeight: 600 }}>failed</span>}
+                  {permissions.gps === "granted" && <span>✅</span>}
                 </div>
               </div>
             )}

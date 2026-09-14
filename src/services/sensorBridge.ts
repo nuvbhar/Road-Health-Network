@@ -6,35 +6,27 @@ export interface PermissionsStatus {
   gps: boolean;
 }
 
-export async function requestSensorAccess(): Promise<PermissionsStatus> {
-  const status: PermissionsStatus = {
-    accelerometer: false,
-    gyroscope: false,
-    gps: false,
-  };
-
+export async function requestMotionAccess(): Promise<boolean> {
   if (
     typeof (DeviceMotionEvent as any) !== "undefined" &&
     typeof (DeviceMotionEvent as any).requestPermission === "function"
   ) {
     try {
       const permissionState = await (DeviceMotionEvent as any).requestPermission();
-      if (permissionState === "granted") {
-        status.accelerometer = true;
-        status.gyroscope = true;
-      }
+      return permissionState === "granted";
     } catch (err) {
       console.error(err);
+      return false;
     }
-  } else {
-    // Non-iOS 13+ generally do not require explicit prompt for motion
-    status.accelerometer = true;
-    status.gyroscope = true;
   }
+  // Non-iOS 13+ generally do not require explicit prompt for motion
+  return true;
+}
 
+export async function requestGpsAccess(): Promise<boolean> {
   if ("geolocation" in navigator) {
     try {
-      const gpsGranted = await new Promise<boolean>((resolve) => {
+      return await new Promise<boolean>((resolve) => {
         navigator.geolocation.getCurrentPosition(
           () => resolve(true),
           (err) => {
@@ -44,13 +36,23 @@ export async function requestSensorAccess(): Promise<PermissionsStatus> {
           { enableHighAccuracy: true, timeout: 5000 }
         );
       });
-      status.gps = gpsGranted;
     } catch (e) {
       console.error(e);
+      return false;
     }
   }
+  return false;
+}
 
-  return status;
+export async function requestSensorAccess(): Promise<PermissionsStatus> {
+  const motionGranted = await requestMotionAccess();
+  const gpsGranted = await requestGpsAccess();
+
+  return {
+    accelerometer: motionGranted,
+    gyroscope: motionGranted,
+    gps: gpsGranted,
+  };
 }
 
 export function startSensorStream(
