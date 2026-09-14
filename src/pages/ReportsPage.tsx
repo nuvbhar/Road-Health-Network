@@ -3,6 +3,8 @@ import { useAppStore } from "../store/useAppStore";
 import { ReportRow } from "../components/reports/ReportRow";
 import { ReportModal } from "../components/reports/ReportModal";
 import { SearchIcon } from "../components/shared/Icons";
+import { Button } from "../components/shared/Button";
+import { exportReportsToCSV } from "../utils/export";
 
 export const ReportsPage: React.FC = () => {
   const reports = useAppStore((state) => state.reports);
@@ -113,6 +115,15 @@ export const ReportsPage: React.FC = () => {
             <option value="date">Sort by Date</option>
             <option value="confidence">Sort by Confidence</option>
           </select>
+
+          <Button 
+            variant="secondary"
+            onClick={() => exportReportsToCSV(filteredAndSorted)}
+            title="Export filtered reports to CSV for dispatch and analysis"
+            style={{ padding: "var(--space-2) var(--space-4)" }}
+          >
+            Export CSV
+          </Button>
         </div>
       </div>
 
