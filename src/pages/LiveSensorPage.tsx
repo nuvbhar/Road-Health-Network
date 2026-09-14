@@ -50,6 +50,11 @@ export const LiveSensorPage: React.FC = () => {
       conn.on("data", (data: any) => {
         if (data && data.type === "sensor:reading") {
           setSensorReading(data.data);
+          processSensorReading(
+            data.data,
+            setSensorEvent,
+            useAppStore.getState().setEngineMetrics,
+          );
         } else if (data && data.type === "sensor:event") {
           setSensorEvent(data.data);
         }
@@ -462,11 +467,69 @@ export const LiveSensorPage: React.FC = () => {
               style={{
                 display: "flex",
                 flexDirection: "column",
-                gap: "var(--space-3)",
+                gap: "var(--space-2)",
                 flex: 1,
                 justifyContent: "center",
               }}
             >
+              {/* Dynamic Live Road Shock Indicator */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "6px 10px",
+                  borderRadius: "var(--radius-sm)",
+                  backgroundColor:
+                    metrics && metrics.zForce > 0.4
+                      ? "rgba(220, 38, 38, 0.15)"
+                      : metrics && metrics.zForce > 0.22
+                      ? "rgba(217, 119, 6, 0.15)"
+                      : "rgba(22, 163, 74, 0.1)",
+                  border: `1px solid ${
+                    metrics && metrics.zForce > 0.4
+                      ? "var(--colour-danger)"
+                      : metrics && metrics.zForce > 0.22
+                      ? "var(--colour-warning)"
+                      : "rgba(22, 163, 74, 0.2)"
+                  }`,
+                  transition: "all 0.1s ease",
+                  marginBottom: "var(--space-1)",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                    color: "var(--text-secondary)",
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  ROAD STATUS
+                </span>
+                <span
+                  style={{
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                    fontFamily: "monospace",
+                    color:
+                      metrics && metrics.zForce > 0.4
+                        ? "var(--colour-danger)"
+                        : metrics && metrics.zForce > 0.22
+                        ? "var(--colour-warning)"
+                        : "var(--colour-ok)",
+                  }}
+                >
+                  {metrics
+                    ? metrics.zForce > 0.4
+                      ? "🚨 IMPACT SPIKE"
+                      : metrics.zForce > 0.22
+                      ? "⚡ CHATTER"
+                      : "✓ SMOOTH"
+                    : "IDLE"}
+                </span>
+              </div>
+
               <MetricRow
                 label="Baseline (μ)"
                 value={metrics ? `${metrics.meanZ.toFixed(2)}g` : "---"}
@@ -476,7 +539,7 @@ export const LiveSensorPage: React.FC = () => {
                 value={metrics ? `${metrics.stdDev.toFixed(3)}` : "---"}
                 highlight={
                   metrics?.stdDev
-                    ? metrics.stdDev > 0.5
+                    ? metrics.stdDev > 0.35
                       ? "var(--colour-danger)"
                       : "var(--colour-ok)"
                     : undefined
@@ -486,20 +549,29 @@ export const LiveSensorPage: React.FC = () => {
               <div
                 style={{
                   borderTop: "1px dashed var(--border-light)",
-                  margin: "var(--space-2) 0",
+                  margin: "var(--space-1) 0",
                 }}
               />
 
               <MetricRow
                 label="Latest Spike"
                 value={metrics ? `${metrics.zForce.toFixed(2)}g` : "---"}
+                highlight={
+                  metrics && metrics.zForce > 0.35
+                    ? "var(--colour-danger)"
+                    : metrics && metrics.zForce > 0.2
+                    ? "var(--colour-warning)"
+                    : undefined
+                }
               />
               <MetricRow
                 label="Signal-to-Noise"
                 value={metrics ? `${metrics.snr.toFixed(1)}x` : "---"}
                 highlight={
                   metrics?.snr
-                    ? metrics.snr > 3.0
+                    ? metrics.snr > 2.5
+                      ? "var(--colour-danger)"
+                      : metrics.snr > 1.6
                       ? "var(--colour-warning)"
                       : "var(--text-muted)"
                     : undefined
