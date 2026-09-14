@@ -118,9 +118,29 @@ export const useAppStore = create<AppState>((set) => ({
       liveSensor: { ...state.liveSensor, event },
     })),
   enqueueSensorEvent: (event) =>
-    set((state) => ({
-      liveSensor: { ...state.liveSensor, queue: [...state.liveSensor.queue, event] },
-    })),
+    set((state) => {
+      const now = event.timestamp ?? Date.now();
+      const DEBOUNCE_MS = 1500;
+
+      // Check against current event
+      if (state.liveSensor.event?.timestamp && Math.abs(now - state.liveSensor.event.timestamp) < DEBOUNCE_MS) {
+        return state;
+      }
+      // Check against last queued item
+      const lastQueued = state.liveSensor.queue[state.liveSensor.queue.length - 1];
+      if (lastQueued?.timestamp && Math.abs(now - lastQueued.timestamp) < DEBOUNCE_MS) {
+        return state;
+      }
+      // Check against most recent session history item
+      const lastPushed = state.liveSensor.sessionHistory[0];
+      if (lastPushed?.timestamp && Math.abs(now - lastPushed.timestamp) < DEBOUNCE_MS) {
+        return state;
+      }
+
+      return {
+        liveSensor: { ...state.liveSensor, queue: [...state.liveSensor.queue, event] },
+      };
+    }),
   dequeueSensorEvent: () =>
     set((state) => {
       if (state.liveSensor.queue.length === 0) return state;
