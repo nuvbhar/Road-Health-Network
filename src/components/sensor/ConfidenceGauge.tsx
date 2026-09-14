@@ -5,8 +5,10 @@ import styles from "./ConfidenceGauge.module.css";
 export const ConfidenceGauge: React.FC = () => {
   const event = useAppStore((state) => state.liveSensor.event);
   const metrics = useAppStore((state) => state.liveSensor.metrics);
+  const stage = useAppStore((state) => state.transmission.stage);
 
   const hasEvent = Boolean(event && event.detected);
+  const isConfirmed = stage === "confirmed";
 
   // Dynamic live responsiveness:
   // When no event is locked, calculate live anomaly probability directly from instantaneous zForce and SNR
@@ -20,14 +22,18 @@ export const ConfidenceGauge: React.FC = () => {
       )
     : 0;
 
-  const displayConfidence = hasEvent ? (event?.confidence || 50) : liveIntensity;
+  // Reset to 0 when confirmed, otherwise show event confidence or live intensity
+  const displayConfidence = isConfirmed ? 0 : (hasEvent ? (event?.confidence || 50) : liveIntensity);
 
   let colour = "var(--text-muted)";
-  if (displayConfidence > 75) colour = "var(--colour-danger)";
+  if (isConfirmed) colour = "var(--colour-ok)"; // Show green when confirmed
+  else if (displayConfidence > 75) colour = "var(--colour-danger)";
   else if (displayConfidence > 45) colour = "var(--colour-warning)";
   else if (displayConfidence > 12) colour = "var(--colour-ok)";
 
-  const label = hasEvent
+  const label = isConfirmed
+    ? "Saved to Database ✓"
+    : hasEvent
     ? (event?.type ? event.type.replace(/_/g, " ") : "Anomaly Detected")
     : displayConfidence > 50
     ? "High Impact Shock"
@@ -46,9 +52,9 @@ export const ConfidenceGauge: React.FC = () => {
         }}
       >
         <h3 className={styles.title} style={{ margin: 0 }}>
-          {hasEvent ? "Detected Anomaly" : "Live Shock Gauge"}
+          {isConfirmed ? "Transmission Complete" : (hasEvent ? "Detected Anomaly" : "Live Shock Gauge")}
         </h3>
-        {hasEvent && (
+        {hasEvent && !isConfirmed && (
           <span
             style={{
               fontSize: "0.7rem",

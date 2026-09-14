@@ -5,6 +5,7 @@ import { PageShell } from "./components/layout/PageShell";
 import { OverviewPage } from "./pages/OverviewPage";
 import { ReportsPage } from "./pages/ReportsPage";
 import { useAppStore } from "./store/useAppStore";
+import { supabase } from "./services/supabaseClient";
 
 const LiveSensorPage = React.lazy(() =>
   import("./pages/LiveSensorPage").then((m) => ({ default: m.LiveSensorPage })),
@@ -20,6 +21,23 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     loadInitialData();
+
+    // Subscribe to real-time changes to update UI across all views
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'reports' },
+        (payload) => {
+          console.log('Real-time report update received:', payload);
+          loadInitialData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [loadInitialData]);
 
   return (
