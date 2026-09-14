@@ -1,105 +1,71 @@
-import Database from "better-sqlite3";
-import path from "path";
+import { createClient } from "@supabase/supabase-js";
 import {
   mockSectors,
   mockReports,
   mockVehicles,
 } from "../src/services/mockData";
 
-const dbPath = path.resolve(process.cwd(), "server", "road-health.db");
-export const db = new Database(dbPath);
+const supabaseUrl = process.env.SUPABASE_URL || "";
+const supabaseKey = process.env.SUPABASE_KEY || "";
 
-// Create tables
-db.exec(`
-  CREATE TABLE IF NOT EXISTS sectors (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    displayName TEXT NOT NULL,
-    status TEXT DEFAULT 'normal',
-    reportCount INTEGER DEFAULT 0,
-    confidence REAL DEFAULT 0,
-    startLat REAL, startLng REAL,
-    endLat REAL, endLng REAL,
-    lastReportAt TEXT
-  );
-
-  CREATE TABLE IF NOT EXISTS reports (
-    id TEXT PRIMARY KEY,
-    reportDate TEXT NOT NULL,
-    sectorId TEXT REFERENCES sectors(id),
-    sectorName TEXT,
-    roadReference TEXT,
-    type TEXT NOT NULL,
-    confidence REAL,
-    weight REAL,
-    source TEXT DEFAULT 'VEHICLE_SENSOR',
-    vehicleRef TEXT,
-    rawDataShared INTEGER DEFAULT 0,
-    status TEXT DEFAULT 'pending',
-    latitude REAL,
-    longitude REAL,
-    independentReports INTEGER DEFAULT 0
-  );
-
-  CREATE TABLE IF NOT EXISTS report_vehicles (
-    reportId TEXT REFERENCES reports(id),
-    vehicleRef TEXT NOT NULL,
-    PRIMARY KEY (reportId, vehicleRef)
-  );
-
-  CREATE TABLE IF NOT EXISTS vehicles (
-    id TEXT PRIMARY KEY,
-    sectorId TEXT REFERENCES sectors(id),
-    status TEXT DEFAULT 'active',
-    reportsToday INTEGER DEFAULT 0,
-    lastSeenAt TEXT
-  );
-`);
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Seed data if empty
-const count = db.prepare("SELECT COUNT(*) as c FROM sectors").get() as {
-  c: number;
-};
-if (count.c === 0) {
-  console.log("Seeding initial data...");
+async function seedData() {
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn("Supabase credentials missing. Please set SUPABASE_URL and SUPABASE_KEY. Skipping data seeding.");
+    return;
+  }
+  try {
+    const { count, error } = await supabase
+      .from("sectors")
+      .select("*", { count: "exact", head: true });
 
-  const insertSector = db.prepare(`
-    INSERT INTO sectors (id, name, displayName, status, reportCount, confidence, startLat, startLng, endLat, endLng, lastReportAt)
-    VALUES (@id, @name, @displayName, @status, @reportCount, @confidence, @startLat, @startLng, @endLat, @endLng, @lastReportAt)
-  `);
-  mockSectors.forEach((s) =>
-    insertSector.run({
-      ...s,
-      startLat: s.bounds.startLat,
-      startLng: s.bounds.startLng,
-      endLat: s.bounds.endLat,
-      endLng: s.bounds.endLng,
-    }),
-  );
+    if (error) {
+      console.error("Error checking sectors count:", error);
+      return;
+    }
 
-  const insertReport = db.prepare(`
-    INSERT INTO reports (id, reportDate, sectorId, sectorName, roadReference, type, confidence, weight, source, vehicleRef, rawDataShared, status, latitude, longitude, independentReports)
-    VALUES (@id, @reportDate, @sectorId, @sectorName, @roadReference, @type, @confidence, @weight, @source, @vehicleRef, @rawDataShared, @status, @latitude, @longitude, @independentReports)
-  `);
+    if (count === 0) {
+      console.log("Seeding initial data to Supabase...");
 
-  const insertReportVehicle = db.prepare(`
-    INSERT INTO report_vehicles (reportId, vehicleRef) VALUES (?, ?)
-  `);
+      const sectorsToInsert = mockSectors.map((s) => {
+        const sector = {
+          ...s,
+          startLat: s.bounds.startLat,
+          startLng: s.bounds.startLng,
+          endLat: s.bounds.endLat,
+          endLng: s.bounds.endLng,
+        };
+        delete (sector as any).bounds;
+        return sector;
+      });
 
-  mockReports.forEach((r) => {
-    insertReport.run({
-      ...r,
-      rawDataShared: r.rawDataShared ? 1 : 0,
-    });
-    r.reportingVehicles.forEach((v) => {
-      insertReportVehicle.run(r.id, v);
-    });
-  });
+      await supabase.from("sectors").insert(sectorsToInsert);
 
-  const insertVehicle = db.prepare(`
-    INSERT INTO vehicles (id, sectorId, status, reportsToday, lastSeenAt)
-    VALUES (@id, @sectorId, @status, @reportsToday, @lastSeenAt)
-  `);
-  mockVehicles.forEach((v) => insertVehicle.run(v));
-  console.log("Seeding complete.");
+      const reportsToInsert = mockReports.map((r) => {
+        const data = { ...r, rawDataShared: r.rawDataShared ? 1 : 0 };
+        delete (data as any).reportingVehicles;
+        return data;
+      });
+
+      await supabase.from("reports").insert(reportsToInsert);
+
+      const reportVehiclesToInsert: any[] = [];
+      mockReports.forEach((r) => {
+        r.reportingVehicles.forEach((v) => {
+          reportVehiclesToInsert.push({ reportId: r.id, vehicleRef: v });
+        });
+      });
+
+      await supabase.from("report_vehicles").insert(reportVehiclesToInsert);
+      await supabase.from("vehicles").insert(mockVehicles);
+
+      console.log("Seeding complete.");
+    }
+  } catch (err) {
+    console.error("Failed to seed data:", err);
+  }
 }
+
+seedData();

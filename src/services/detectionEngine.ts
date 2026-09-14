@@ -50,16 +50,10 @@ async function classifyEvent(sequence: number[], peakToPeak: number, windowSnr: 
     prediction.dispose();
 
     const pPothole = probs[0];
-    const pSpeedbump = probs[1];
-    const pNoise = probs[2];
+    const pNoise = probs[1];
 
     if (pNoise > 0.6) {
       console.debug(`[Engine] AI classified event as noise (prob: ${pNoise.toFixed(2)}). Emitting anyway for debug.`);
-    }
-
-    if (pSpeedbump > pPothole) {
-      console.debug(`[Engine] Ignored Speed Bump (prob: ${pSpeedbump.toFixed(2)})`);
-      return;
     }
 
     type = peakToPeak > 3.5 ? "SEVERE_POTHOLE" : "POTENTIAL_POTHOLE";
@@ -81,7 +75,7 @@ async function classifyEvent(sequence: number[], peakToPeak: number, windowSnr: 
     if (isPotholeSequence) {
       type = peakToPeak > 3.5 ? "SEVERE_POTHOLE" : "POTENTIAL_POTHOLE";
     } else {
-      console.debug("[Engine] Ignored heuristic Speed Bump.");
+      console.debug("[Engine] Ignored non-pothole sequence.");
       return;
     }
   }

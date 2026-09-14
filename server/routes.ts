@@ -1,57 +1,49 @@
 import { Router } from "express";
-import { db } from "./db";
+import { supabase } from "./db";
 import { broadcast } from "./ws";
 
 export const router = Router();
 
 // /api/stats
-router.get("/stats", (req, res) => {
-  const totalReports = (
-    db.prepare("SELECT COUNT(*) as c FROM reports").get() as any
-  ).c;
-  const activeVehicles = (
-    db
-      .prepare("SELECT COUNT(*) as c FROM vehicles WHERE status = ?")
-      .get("active") as any
-  ).c;
-  const sectorsMonitored = (
-    db.prepare("SELECT COUNT(*) as c FROM sectors").get() as any
-  ).c;
-  const highConfidence = (
-    db
-      .prepare("SELECT COUNT(*) as c FROM reports WHERE confidence > 80")
-      .get() as any
-  ).c;
-  const pendingReview = (
-    db
-      .prepare("SELECT COUNT(*) as c FROM reports WHERE status = ?")
-      .get("pending") as any
-  ).c;
-  const resolved = (
-    db
-      .prepare("SELECT COUNT(*) as c FROM reports WHERE status = ?")
-      .get("resolved") as any
-  ).c;
+router.get("/stats", async (req, res) => {
+  try {
+    const [
+      { count: totalReports },
+      { count: activeVehicles },
+      { count: sectorsMonitored },
+      { count: highConfidence },
+      { count: pendingReview },
+      { count: resolved },
+    ] = await Promise.all([
+      supabase.from("reports").select("*", { count: "exact", head: true }),
+      supabase.from("vehicles").select("*", { count: "exact", head: true }).eq("status", "active"),
+      supabase.from("sectors").select("*", { count: "exact", head: true }),
+      supabase.from("reports").select("*", { count: "exact", head: true }).gt("confidence", 80),
+      supabase.from("reports").select("*", { count: "exact", head: true }).eq("status", "pending"),
+      supabase.from("reports").select("*", { count: "exact", head: true }).eq("status", "resolved"),
+    ]);
 
-  res.json({
-    ok: true,
-    data: {
-      totalReports,
-      activeVehicles,
-      sectorsMonitored,
-      highConfidence,
-      pendingReview,
-      resolved,
-    },
-  });
+    res.json({
+      ok: true,
+      data: {
+        totalReports: totalReports || 0,
+        activeVehicles: activeVehicles || 0,
+        sectorsMonitored: sectorsMonitored || 0,
+        highConfidence: highConfidence || 0,
+        pendingReview: pendingReview || 0,
+        resolved: resolved || 0,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: "Failed to fetch stats" });
+  }
 });
 
 // /api/sectors
-router.get("/sectors", (req, res) => {
-  const sectors = db
-    .prepare("SELECT * FROM sectors")
-    .all()
-    .map((row: any) => ({
+router.get("/sectors", async (req, res) => {
+  try {
+    const { data: sectorsData } = await supabase.from("sectors").select("*");
+    const sectors = (sectorsData || []).map((row: any) => ({
       ...row,
       bounds: {
         startLat: row.startLat,
@@ -60,92 +52,102 @@ router.get("/sectors", (req, res) => {
         endLng: row.endLng,
       },
     }));
-  res.json({ ok: true, data: sectors });
+    res.json({ ok: true, data: sectors });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: "Failed to fetch sectors" });
+  }
 });
 
 // /api/reports
-router.get("/reports", (req, res) => {
-  const { sectorId, status } = req.query;
-  let query = "SELECT * FROM reports";
-  const params: any[] = [];
-  const conditions = [];
+router.get("/reports", async (req, res) => {
+  try {
+    const { sectorId, status } = req.query;
+    
+    let query = supabase.from("reports").select("*, report_vehicles(vehicleRef)").order("id", { ascending: false });
 
-  if (sectorId && typeof sectorId === "string") {
-    conditions.push("sectorId = ?");
-    params.push(sectorId);
-  }
-  if (status && status !== "all" && typeof status === "string") {
-    conditions.push("status = ?");
-    params.push(status);
-  }
-  if (conditions.length > 0) {
-    query += " WHERE " + conditions.join(" AND ");
-  }
-  query += " ORDER BY id DESC";
+    if (sectorId && typeof sectorId === "string") {
+      query = query.eq("sectorId", sectorId);
+    }
+    if (status && status !== "all" && typeof status === "string") {
+      query = query.eq("status", status);
+    }
 
-  const reports = db
-    .prepare(query)
-    .all(...params)
-    .map((r: any) => {
-      const vehicles = db
-        .prepare("SELECT vehicleRef FROM report_vehicles WHERE reportId = ?")
-        .all(r.id)
-        .map((v: any) => v.vehicleRef);
-      return {
+    const { data: reportsData } = await query;
+    
+    const reports = (reportsData || []).map((r: any) => {
+      const vehicles = (r.report_vehicles || []).map((v: any) => v.vehicleRef);
+      const result = {
         ...r,
         rawDataShared: !!r.rawDataShared,
         reportingVehicles: vehicles,
       };
+      delete result.report_vehicles;
+      return result;
     });
 
-  res.json({ ok: true, data: reports });
+    res.json({ ok: true, data: reports });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: "Failed to fetch reports" });
+  }
 });
 
 // /api/vehicles
-router.get("/vehicles", (req, res) => {
-  const vehicles = db.prepare("SELECT * FROM vehicles").all();
-  res.json({ ok: true, data: vehicles });
+router.get("/vehicles", async (req, res) => {
+  try {
+    const { data: vehicles } = await supabase.from("vehicles").select("*");
+    res.json({ ok: true, data: vehicles });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: "Failed to fetch vehicles" });
+  }
 });
 
 // /api/trend
-router.get("/trend", (req, res) => {
-  const trend = Array.from({ length: 24 }, (_, i) => {
-    const d = new Date();
-    d.setHours(d.getHours() - (23 - i));
-    return {
-      hour: `${d.getHours().toString().padStart(2, "0")}:00`,
-      count: 0,
-    };
-  });
+router.get("/trend", async (req, res) => {
+  try {
+    const trend = Array.from({ length: 24 }, (_, i) => {
+      const d = new Date();
+      d.setHours(d.getHours() - (23 - i));
+      return {
+        hour: `${d.getHours().toString().padStart(2, "0")}:00`,
+        count: 0,
+      };
+    });
 
-  const recentReports = db.prepare("SELECT reportDate FROM reports").all();
-  const now = Date.now();
+    const { data: recentReports } = await supabase.from("reports").select("reportDate");
+    const now = Date.now();
 
-  recentReports.forEach((r: any) => {
-    const rDate = new Date(r.reportDate);
-    if (!isNaN(rDate.getTime())) {
-      const diffHours = Math.floor((now - rDate.getTime()) / (1000 * 60 * 60));
-      if (diffHours >= 0 && diffHours < 24) {
-        const bucketIndex = 23 - diffHours;
-        if (trend[bucketIndex]) {
-          trend[bucketIndex].count++;
+    (recentReports || []).forEach((r: any) => {
+      const rDate = new Date(r.reportDate);
+      if (!isNaN(rDate.getTime())) {
+        const diffHours = Math.floor((now - rDate.getTime()) / (1000 * 60 * 60));
+        if (diffHours >= 0 && diffHours < 24) {
+          const bucketIndex = 23 - diffHours;
+          if (trend[bucketIndex]) {
+            trend[bucketIndex].count++;
+          }
         }
       }
-    }
-  });
+    });
 
-  res.json({ ok: true, data: trend });
+    res.json({ ok: true, data: trend });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: "Failed to fetch trend" });
+  }
 });
 
 // /api/reports/:id/status
-router.patch("/reports/:id/status", (req, res) => {
-  const { id } = req.params;
-  const { status } = req.body;
-  if (!["pending", "under_review", "resolved"].includes(status)) {
-    return res.status(400).json({ ok: false, error: "Invalid status" });
+router.patch("/reports/:id/status", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (!["pending", "under_review", "resolved"].includes(status)) {
+      return res.status(400).json({ ok: false, error: "Invalid status" });
+    }
+    await supabase.from("reports").update({ status }).eq("id", id);
+    res.json({ ok: true });
+  } catch (error) {
+    res.status(500).json({ ok: false, error: "Failed to update report status" });
   }
-  db.prepare("UPDATE reports SET status = ? WHERE id = ?").run(status, id);
-  res.json({ ok: true });
 });
 
 // Haversine distance in meters
@@ -165,109 +167,108 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
 }
 
 // /api/reports (POST)
-router.post("/reports", (req, res) => {
-  const data = req.body;
-  const wss = req.app.locals.wss;
-  const lat = data.latitude || 0;
-  const lon = data.longitude || 0;
-  const reportType = data.type || "ROAD_ANOMALY";
-  const vehicleRef = data.vehicleRef || "User-UNKNOWN";
+router.post("/reports", async (req, res) => {
+  try {
+    const data = req.body;
+    const wss = req.app.locals.wss;
+    const lat = data.latitude || 0;
+    const lon = data.longitude || 0;
+    const reportType = data.type || "ROAD_ANOMALY";
+    const vehicleRef = data.vehicleRef || "User-UNKNOWN";
 
-  // 1. Check for nearby active reports of same type
-  const activeReports = db
-    .prepare("SELECT * FROM reports WHERE status != ? AND type = ?")
-    .all("resolved", reportType);
+    // 1. Check for nearby active reports of same type
+    const { data: activeReports } = await supabase
+      .from("reports")
+      .select("*")
+      .neq("status", "resolved")
+      .eq("type", reportType);
 
-  let matchedReport: any = null;
-  for (const r of activeReports as any[]) {
-    if (r.latitude && r.longitude) {
-      const dist = getDistance(lat, lon, r.latitude, r.longitude);
-      if (dist <= 50) {
-        matchedReport = r;
-        break;
-      }
-    }
-  }
-
-  if (matchedReport) {
-    // Check if this vehicle already reported this (to avoid spam)
-    const existingVehicle = db
-      .prepare(
-        "SELECT * FROM report_vehicles WHERE reportId = ? AND vehicleRef = ?",
-      )
-      .get(matchedReport.id, vehicleRef);
-
-    if (!existingVehicle) {
-      db.prepare(
-        "INSERT INTO report_vehicles (reportId, vehicleRef) VALUES (?, ?)",
-      ).run(matchedReport.id, vehicleRef);
-      db.prepare(
-        "UPDATE reports SET independentReports = independentReports + 1 WHERE id = ?",
-      ).run(matchedReport.id);
-
-      const updated = db
-        .prepare("SELECT * FROM reports WHERE id = ?")
-        .get(matchedReport.id) as any;
-
-      // Auto-escalation Logic
-      if (updated.independentReports >= 3 && updated.status === "pending") {
-        db.prepare("UPDATE reports SET status = ? WHERE id = ?").run(
-          "under_review",
-          matchedReport.id,
-        );
-        updated.status = "under_review";
-      }
-
-      if (wss) {
-        broadcast(wss, "report:updated", updated);
+    let matchedReport: any = null;
+    for (const r of (activeReports || [])) {
+      if (r.latitude && r.longitude) {
+        const dist = getDistance(lat, lon, r.latitude, r.longitude);
+        if (dist <= 50) {
+          matchedReport = r;
+          break;
+        }
       }
     }
 
-    return res.json({
-      ok: true,
-      data: { id: matchedReport.id, corroborated: true },
+    if (matchedReport) {
+      // Check if this vehicle already reported this (to avoid spam)
+      const { data: existingVehicles } = await supabase
+        .from("report_vehicles")
+        .select("*")
+        .eq("reportId", matchedReport.id)
+        .eq("vehicleRef", vehicleRef);
+      
+      const existingVehicle = existingVehicles?.[0];
+
+      if (!existingVehicle) {
+        await supabase.from("report_vehicles").insert({ reportId: matchedReport.id, vehicleRef });
+        
+        const newCount = matchedReport.independentReports + 1;
+        await supabase.from("reports").update({ independentReports: newCount }).eq("id", matchedReport.id);
+
+        const { data: updatedData } = await supabase
+          .from("reports")
+          .select("*")
+          .eq("id", matchedReport.id);
+        
+        const updated = updatedData?.[0] || matchedReport;
+
+        // Auto-escalation Logic
+        if (updated.independentReports >= 3 && updated.status === "pending") {
+          await supabase.from("reports").update({ status: "under_review" }).eq("id", matchedReport.id);
+          updated.status = "under_review";
+        }
+
+        if (wss) {
+          broadcast(wss, "report:updated", updated);
+        }
+      }
+
+      return res.json({
+        ok: true,
+        data: { id: matchedReport.id, corroborated: true },
+      });
+    }
+
+    // 2. No nearby report found, create a new one
+    const id = data.id || `RPT-${Math.floor(1000 + Math.random() * 9000)}`;
+    
+    await supabase.from("reports").insert({
+      id,
+      reportDate: data.reportDate || new Date().toISOString(),
+      sectorId: data.sectorId || "SEC-A",
+      sectorName: data.sectorName || "Kharar-CU Sector A",
+      roadReference: data.roadReference || "Unknown",
+      type: reportType,
+      confidence: data.confidence || 50,
+      weight: data.weight || 0,
+      source: data.source || "VEHICLE_SENSOR",
+      vehicleRef,
+      rawDataShared: 0,
+      status: data.status || "pending",
+      latitude: lat,
+      longitude: lon,
+      independentReports: data.independentReports || 1,
     });
+
+    if (data.reportingVehicles && Array.isArray(data.reportingVehicles)) {
+      const records = data.reportingVehicles.map((v: string) => ({ reportId: id, vehicleRef: v }));
+      await supabase.from("report_vehicles").insert(records);
+    } else {
+      await supabase.from("report_vehicles").insert({ reportId: id, vehicleRef });
+    }
+
+    if (wss) {
+      broadcast(wss, "report:new", { id });
+    }
+
+    res.json({ ok: true, data: { id, corroborated: false } });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ ok: false, error: "Failed to create report" });
   }
-
-  // 2. No nearby report found, create a new one
-  const id = data.id || `RPT-${Math.floor(1000 + Math.random() * 9000)}`;
-  const insert = db.prepare(`
-    INSERT INTO reports (id, reportDate, sectorId, sectorName, roadReference, type, confidence, weight, source, vehicleRef, rawDataShared, status, latitude, longitude, independentReports)
-    VALUES (@id, @reportDate, @sectorId, @sectorName, @roadReference, @type, @confidence, @weight, @source, @vehicleRef, @rawDataShared, @status, @latitude, @longitude, @independentReports)
-  `);
-
-  insert.run({
-    id,
-    reportDate: data.reportDate || new Date().toISOString(),
-    sectorId: data.sectorId || "SEC-A",
-    sectorName: data.sectorName || "Kharar-CU Sector A",
-    roadReference: data.roadReference || "Unknown",
-    type: reportType,
-    confidence: data.confidence || 50,
-    weight: data.weight || 0,
-    source: data.source || "VEHICLE_SENSOR",
-    vehicleRef,
-    rawDataShared: 0,
-    status: data.status || "pending",
-    latitude: lat,
-    longitude: lon,
-    independentReports: data.independentReports || 1,
-  });
-
-  const insertReportVehicle = db.prepare(
-    `INSERT INTO report_vehicles (reportId, vehicleRef) VALUES (?, ?)`,
-  );
-  if (data.reportingVehicles && Array.isArray(data.reportingVehicles)) {
-    data.reportingVehicles.forEach((v: string) =>
-      insertReportVehicle.run(id, v),
-    );
-  } else {
-    insertReportVehicle.run(id, vehicleRef);
-  }
-
-  if (wss) {
-    broadcast(wss, "report:new", { id });
-  }
-
-  res.json({ ok: true, data: { id, corroborated: false } });
 });

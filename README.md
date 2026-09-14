@@ -10,7 +10,7 @@ Built using React, TypeScript, Leaflet, and a lightweight Node/SQLite backend, t
 - **Auto-Corroboration Engine**: Discrepancies reported by multiple fleet vehicles in the same geographic radius are automatically merged.
 - **Privacy-First By Design**: Avoids exact timestamping and coarsens GPS coordinates (to ~100m) ensuring vehicles cannot be tracked individually.
 - **Interactive Network Map**: Fully interactive OpenStreetMap integration displaying color-coded highway sectors and corroborated defect markers.
-- **Expanded Discrepancy Types**: Automatic classification of Pot Holes, Severe Cracks, Unmarked Speed Bumps, and Waterlogging based on Z-axis/Y-axis shock profiles.
+- **Expanded Discrepancy Types**: Automatic classification of Pot Holes, Severe Cracks, and Waterlogging based on Z-axis/Y-axis shock profiles.
 - **Fleet Management**: Monitor connected sensor nodes and historical report volumes in real-time.
 
 ## 🚀 Quick Start

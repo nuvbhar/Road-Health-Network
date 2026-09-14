@@ -10,7 +10,7 @@ function generateData() {
   const ys = [];
 
   for (let i = 0; i < NUM_SAMPLES; i++) {
-    const classId = i % 3;
+    const classId = i % 2;
     const window = new Array(WINDOW_SIZE).fill(1.0); // Baseline gravity (1g)
 
     if (classId === 0) {
@@ -25,27 +25,14 @@ function generateData() {
       window[strikeIdx] += Math.random() * 3.0 + 1.5;
 
       xs.push(window);
-      ys.push([1, 0, 0]);
-    } else if (classId === 1) {
-      // CLASS 1: SPEED BUMP (Positive climb, then negative landing)
-      for (let j = 0; j < WINDOW_SIZE; j++)
-        window[j] += Math.random() * 0.2 - 0.1;
-
-      const climbIdx = Math.floor(Math.random() * 4) + 4;
-      const dropIdx = climbIdx + Math.floor(Math.random() * 4) + 3;
-
-      window[climbIdx] += Math.random() * 1.5 + 1.0;
-      window[dropIdx] -= Math.random() * 1.2 + 0.5;
-
-      xs.push(window);
-      ys.push([0, 1, 0]);
+      ys.push([1, 0]);
     } else {
-      // CLASS 2: ROUGH ROAD / NOISE
+      // CLASS 1: ROUGH ROAD / NOISE
       for (let j = 0; j < WINDOW_SIZE; j++) {
         window[j] += Math.random() * 1.6 - 0.8;
       }
       xs.push(window);
-      ys.push([0, 0, 1]);
+      ys.push([0, 1]);
     }
   }
 
@@ -88,7 +75,7 @@ async function run() {
   model.add(tf.layers.dense({ units: 16, activation: "relu" }));
   model.add(tf.layers.dropout({ rate: 0.2 }));
 
-  model.add(tf.layers.dense({ units: 3, activation: "softmax" }));
+  model.add(tf.layers.dense({ units: 2, activation: "softmax" }));
 
   model.compile({
     optimizer: tf.train.adam(0.005),
