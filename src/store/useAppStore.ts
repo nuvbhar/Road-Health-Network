@@ -18,6 +18,7 @@ import {
   updateReportStatus as apiUpdateReportStatus,
   createReport as apiCreateReport,
 } from "../services/api";
+import { getOrCreateDeviceId, registerDevice } from "../services/deviceIdentity";
 
 interface AppState {
   isInitialLoading: boolean;
@@ -66,6 +67,7 @@ interface AppState {
   setCalibrationFactor: (factor: number) => void;
   loadInitialData: () => Promise<void>;
   handleRealtimeUpdate: (payload: any) => void;
+  processTransmissionEvent: (event: RoadEvent) => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -229,6 +231,51 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
     // We can fetch stats in background without blocking UI
     fetchStats().then(stats => set({ stats })).catch(() => {});
+  },
+
+  processTransmissionEvent: (event: RoadEvent) => {
+    set({ transmission: { stage: "processing" } });
+    registerDevice();
+
+    setTimeout(() => {
+      set({ transmission: { stage: "transmitted" } });
+
+      setTimeout(() => {
+        set({ transmission: { stage: "confirmed" } });
+
+        if (event && event.type) {
+          const uuid = getOrCreateDeviceId();
+          get().addReport({
+            id: `RPT-LIVE-${Math.floor(Math.random() * 9000)}`,
+            reportDate: new Date().toISOString(),
+            type: event.type as any,
+            confidence: event.confidence,
+            weight: event.weight || 0,
+            source: "VEHICLE_SENSOR",
+            vehicleRef: uuid,
+            sectorId: "SEC-B",
+            sectorName: "Kharar-CU Sector B",
+            roadReference: "Live Demo Route",
+            latitude: event.latitude || 30.748 + Math.random() * 0.005,
+            longitude: event.longitude || 76.645 + Math.random() * 0.005,
+            status: "pending",
+            independentReports: 1,
+            reportingVehicles: [{ id: uuid }],
+            speed: event.speed,
+            gyroscope: event.gyroscope,
+            waveformData: event.waveformData,
+          } as any).catch((e) => console.warn("Failed to push to DB:", e));
+
+          // Track in session history
+          get().addSessionHistoryItem(event);
+        }
+
+        setTimeout(() => {
+          set({ transmission: { stage: "idle" } });
+          set((state) => ({ liveSensor: { ...state.liveSensor, event: null } }));
+        }, 150);
+      }, 25);
+    }, 25);
   },
 }));
 

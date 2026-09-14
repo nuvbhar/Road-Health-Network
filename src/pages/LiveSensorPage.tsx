@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useAppStore } from "../store/useAppStore";
 import { SensorCanvas } from "../components/sensor/SensorCanvas";
 import { TransmissionPipeline } from "../components/pipeline/TransmissionPipeline";
@@ -8,128 +8,24 @@ import { ConfidenceGauge } from "../components/sensor/ConfidenceGauge";
 import { PairingQR } from "../components/sensor/PairingQR";
 import { SmartphoneIcon } from "../components/shared/Icons";
 import { Button } from "../components/shared/Button";
-import {
-  requestSensorAccess,
-  startSensorStream,
-} from "../services/sensorBridge";
-import { processSensorReading } from "../services/detectionEngine";
-import Peer from "peerjs";
+import { useWebRTCBridge } from "../hooks/useWebRTCBridge";
+import { useLocalSensor } from "../hooks/useLocalSensor";
 
 export const LiveSensorPage: React.FC = () => {
   const [activeDevice, setActiveDevice] = useState<string | null>(null);
   const [localActive, setLocalActive] = useState(false);
-  const [peerId, setPeerId] = useState<string | undefined>(undefined);
-  const stopStreamRef = useRef<(() => void) | null>(null);
-  const peerRef = useRef<Peer | null>(null);
-
-  const setSensorReading = useAppStore((state) => state.setSensorReading);
-  const setSensorEvent = useAppStore((state) => state.setSensorEvent);
 
   const reading = useAppStore((state) => state.liveSensor.reading);
   const metrics = useAppStore((state) => state.liveSensor.metrics);
 
   useEffect(() => {
     if (reading && !activeDevice) {
-      setActiveDevice(
-        localActive ? "This Device (Local)" : "External Sensor Node (P2P)",
-      );
+      setActiveDevice(localActive ? "This Device (Local)" : "External Sensor Node (P2P)");
     }
   }, [reading, activeDevice, localActive]);
 
-  useEffect(() => {
-    // Initialize PeerJS for static P2P receiving
-    const peer = new Peer();
-    peer.on("open", (id) => {
-      console.log("PeerJS ID:", id);
-      setPeerId(id);
-    });
-
-    peer.on("connection", (conn) => {
-      console.log("Mobile device connected via WebRTC");
-      setActiveDevice("External Mobile Device (WebRTC)");
-
-      conn.on("data", (data: any) => {
-        if (data && data.type === "sensor:reading") {
-          setSensorReading(data.data);
-          processSensorReading(
-            data.data,
-            () => {}, // Ignore local classification for remote data since remote device sends 'sensor:event'
-            useAppStore.getState().setEngineMetrics,
-          );
-        } else if (data && data.type === "sensor:event") {
-          useAppStore.getState().enqueueSensorEvent(data.data);
-        }
-      });
-
-      conn.on("close", () => {
-        setActiveDevice(null);
-      });
-    });
-
-    peerRef.current = peer;
-
-    return () => {
-      peer.destroy();
-      if (stopStreamRef.current) stopStreamRef.current();
-    };
-  }, [setSensorReading, setSensorEvent]);
-
-  const [localState, setLocalState] = useState<
-    "idle" | "scanning" | "streaming" | "unsupported"
-  >("idle");
-
-  const handleLocalToggle = async () => {
-    if (localState === "streaming") {
-      if (stopStreamRef.current) stopStreamRef.current();
-      stopStreamRef.current = null;
-      setLocalState("idle");
-      setActiveDevice(null);
-      setLocalActive(false);
-      return;
-    }
-
-    setLocalState("scanning");
-    const granted = await requestSensorAccess();
-    if (!granted) {
-      setLocalState("unsupported");
-      return;
-    }
-
-    // Scan for actual data
-    let hasData = false;
-    const testListener = (e: DeviceMotionEvent) => {
-      const acc = e.accelerationIncludingGravity || e.acceleration;
-      if (acc && (acc.x !== null || acc.y !== null || acc.z !== null)) {
-        hasData = true;
-      }
-    };
-
-    if (typeof window.DeviceMotionEvent !== "undefined") {
-      window.addEventListener("devicemotion", testListener);
-    }
-
-    setTimeout(() => {
-      if (typeof window.DeviceMotionEvent !== "undefined") {
-        window.removeEventListener("devicemotion", testListener);
-      }
-
-      if (hasData) {
-        setLocalState("streaming");
-        setLocalActive(true);
-        setActiveDevice("This Device (Local)");
-        stopStreamRef.current = startSensorStream((r) => {
-          setSensorReading(r);
-          processSensorReading(
-            r,
-            useAppStore.getState().enqueueSensorEvent,
-            useAppStore.getState().setEngineMetrics,
-          );
-        });
-      } else {
-        setLocalState("unsupported");
-      }
-    }, 1500);
-  };
+  const { peerId } = useWebRTCBridge(setActiveDevice);
+  const { localState, handleLocalToggle } = useLocalSensor(setActiveDevice, setLocalActive);
 
   return (
     <div

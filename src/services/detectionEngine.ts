@@ -26,9 +26,7 @@ let engineState: EngineState = "IDLE";
 let captureCountdown = 0;
 let cooldownFrames = 0;
 
-// Minimum absolute G-force deviation required to consider an anomaly
-const ABSOLUTE_THRESHOLD = 0.65; // increased significantly to lower sensitivity
-const VARIANCE_SMOOTHING = 0.04;
+
 
 // Context snapshots for SNR
 let triggerMean = 0;

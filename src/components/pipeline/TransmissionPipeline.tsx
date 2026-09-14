@@ -2,15 +2,11 @@ import React, { useEffect } from "react";
 import { useAppStore } from "../../store/useAppStore";
 import { CheckCircleIcon, AlertTriangleIcon } from "../shared/Icons";
 import styles from "./TransmissionPipeline.module.css";
-import { getOrCreateDeviceId, registerDevice } from "../../services/deviceIdentity";
 
 export const TransmissionPipeline: React.FC = () => {
   const queue = useAppStore((state) => state.liveSensor.queue);
   const event = useAppStore((state) => state.liveSensor.event);
   const stage = useAppStore((state) => state.transmission.stage);
-  const setTransmissionStage = useAppStore(
-    (state) => state.setTransmissionStage,
-  );
   const dequeueSensorEvent = useAppStore((state) => state.dequeueSensorEvent);
 
   // 1. Dequeue logic: runs whenever stage, event, or queue length changes
@@ -22,60 +18,10 @@ export const TransmissionPipeline: React.FC = () => {
 
   // 2. Pipeline sequence: runs ONLY when a new event is loaded
   useEffect(() => {
-    if (event && event.detected) {
-      setTransmissionStage("processing");
-      registerDevice();
-
-      const t1 = setTimeout(() => {
-        setTransmissionStage("transmitted");
-
-        const t2 = setTimeout(() => {
-          setTransmissionStage("confirmed");
-
-          if (event && event.type) {
-            const uuid = getOrCreateDeviceId();
-            useAppStore
-              .getState()
-              .addReport({
-                id: `RPT-LIVE-${Math.floor(Math.random() * 9000)}`,
-                reportDate: new Date().toISOString(),
-                type: event.type as any,
-                confidence: event.confidence,
-                weight: event.weight || 0,
-                source: "VEHICLE_SENSOR",
-                vehicleRef: uuid,
-                sectorId: "SEC-B",
-                sectorName: "Kharar-CU Sector B",
-                roadReference: "Live Demo Route",
-                latitude: event.latitude || 30.748 + Math.random() * 0.005,
-                longitude: event.longitude || 76.645 + Math.random() * 0.005,
-                status: "pending",
-                independentReports: 1,
-                reportingVehicles: [uuid],
-                speed: event.speed,
-                gyroscope: event.gyroscope,
-                waveformData: event.waveformData,
-              } as any)
-              .catch((e) => console.warn("Failed to push to DB:", e));
-
-            // Track in session history
-            useAppStore.getState().addSessionHistoryItem(event);
-          }
-
-          const t3 = setTimeout(() => {
-            setTransmissionStage("idle");
-            useAppStore.getState().setSensorEvent(null);
-          }, 150);
-
-          return () => clearTimeout(t3);
-        }, 25);
-
-        return () => clearTimeout(t2);
-      }, 25);
-
-      return () => clearTimeout(t1);
+    if (event && event.detected && stage === "idle") {
+      useAppStore.getState().processTransmissionEvent(event);
     }
-  }, [event]);
+  }, [event, stage]);
 
   if (stage === "idle" && (!queue || queue.length === 0)) {
     return (
