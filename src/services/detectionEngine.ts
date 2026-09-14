@@ -67,20 +67,34 @@ async function classifyEvent(
     type = peakToPeak > 2.8 ? "SEVERE_POTHOLE" : "POTENTIAL_POTHOLE";
   }
 
-  // Dynamic Confidence Scoring
+  // Dynamic Confidence Scoring starting at 0% and scaling with sensor movement
   const captureSpeed = reading.gps?.speed ?? null;
-  let confidence = Math.min(98, Math.floor(45 + (windowSnr - 2.0) * 14));
-  confidence = Math.min(99, confidence + aiConfidenceBonus);
+  let confidence = 0;
 
-  if (peakToPeak > 2.5) confidence = Math.min(99, confidence + 12);
-  if (captureSpeed !== null && captureSpeed < 10 && peakToPeak > 2.0) {
-    confidence = Math.min(99, confidence + 10);
+  // Scale with Signal-to-Noise Ratio (movement clarity)
+  if (windowSnr > 1.35) {
+    confidence += (windowSnr - 1.35) * 15;
   }
+  
+  // Scale with absolute movement force (peak to peak Z-axis deviation)
+  if (peakToPeak > 0.5) {
+    confidence += (peakToPeak - 0.5) * 25;
+  }
+
+  confidence += aiConfidenceBonus;
+
+  if (peakToPeak > 2.5) confidence += 12;
+  if (captureSpeed !== null && captureSpeed < 10 && peakToPeak > 2.0) {
+    confidence += 10;
+  }
+
+  // Ensure it stays within 0-99%
+  confidence = Math.max(0, Math.min(99, Math.floor(confidence)));
 
   onEvent({
     detected: true,
     type,
-    confidence: Math.max(50, confidence),
+    confidence,
     weight: parseFloat(peakToPeak.toFixed(2)),
     timestamp: Date.now(),
     latitude: reading.gps?.latitude,
