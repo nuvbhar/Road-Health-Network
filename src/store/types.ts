@@ -70,6 +70,8 @@ export interface SensorReading {
   };
   gps?: {
     speed: number | null; // meters per second
+    latitude?: number;
+    longitude?: number;
   };
 }
 
@@ -88,4 +90,13 @@ export interface RoadEvent {
   confidence: number;
   weight?: number;
   timestamp: number | null;
+  // Extended telemetry for actual data storage when anomaly arrives
+  latitude?: number;
+  longitude?: number;
+  speed?: number | null;
+  gyroscope?: {
+    pitch: number;
+    roll: number;
+    yaw: number;
+  };
 }

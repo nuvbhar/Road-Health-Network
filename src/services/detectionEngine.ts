@@ -33,9 +33,14 @@ const VARIANCE_SMOOTHING = 0.05;
 // Context snapshots for SNR
 let triggerMean = 0;
 let triggerStdDev = 0;
-let triggerSpeed: number | null = null;
 
-async function classifyEvent(sequence: number[], peakToPeak: number, windowSnr: number, captureSpeed: number | null, onEvent: (event: RoadEvent) => void) {
+async function classifyEvent(
+  sequence: number[],
+  peakToPeak: number,
+  windowSnr: number,
+  reading: SensorReading,
+  onEvent: (event: RoadEvent) => void
+) {
   let type: string;
   let aiConfidenceBonus = 0;
 
@@ -81,6 +86,7 @@ async function classifyEvent(sequence: number[], peakToPeak: number, windowSnr: 
   }
 
   // CONFIDENCE SCORING (w/ Speed Normalisation & AI Bonus)
+  const captureSpeed = reading.gps?.speed ?? null;
   let confidence = Math.min(98, Math.floor(40 + (windowSnr - 3.0) * 12));
   confidence = Math.min(99, confidence + aiConfidenceBonus);
 
@@ -95,6 +101,14 @@ async function classifyEvent(sequence: number[], peakToPeak: number, windowSnr: 
     confidence,
     weight: parseFloat(peakToPeak.toFixed(2)),
     timestamp: Date.now(),
+    latitude: reading.gps?.latitude,
+    longitude: reading.gps?.longitude,
+    speed: captureSpeed,
+    gyroscope: {
+      pitch: reading.gyroscope.x,
+      roll: reading.gyroscope.y,
+      yaw: reading.gyroscope.z,
+    },
   });
 }
 
@@ -132,7 +146,6 @@ export function processSensorReading(
       captureBuffer = zBuffer.slice(-5);
       triggerMean = meanZ;
       triggerStdDev = stdDev;
-      triggerSpeed = currentSpeed;
     }
   } else if (engineState === "CAPTURING") {
     captureBuffer.push(rawZ);
@@ -149,13 +162,12 @@ export function processSensorReading(
       const windowSnr = maxDeviation / (triggerStdDev + VARIANCE_SMOOTHING);
 
       const sequence = captureBuffer.map(z => z - triggerMean);
-      const captureSpeed = triggerSpeed;
 
       engineState = "COOLDOWN";
       setTimeout(() => { engineState = "IDLE"; }, 2000);
 
       // Fire and forget inference
-      classifyEvent(sequence, peakToPeak, windowSnr, captureSpeed, onEvent).catch(console.error);
+      classifyEvent(sequence, peakToPeak, windowSnr, reading, onEvent).catch(console.error);
     }
   }
 }

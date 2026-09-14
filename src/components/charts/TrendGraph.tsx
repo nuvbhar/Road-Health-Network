@@ -66,6 +66,8 @@ export const TrendGraph: React.FC = () => {
                 value: "Reports/hr",
                 angle: -90,
                 position: "insideLeft",
+                offset: -10,
+                dx: -15, // Offset to prevent overlap with tick labels
                 style: {
                   fill: "var(--text-muted)",
                   fontSize: 12,

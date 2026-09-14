@@ -30,6 +30,8 @@ export function startSensorStream(
   const throttleMs = 33; // ~30Hz
 
   let currentSpeed: number | null = null;
+  let currentLat: number | undefined;
+  let currentLng: number | undefined;
   let watchId: number | null = null;
 
   if ("geolocation" in navigator) {
@@ -37,6 +39,8 @@ export function startSensorStream(
       (pos) => {
         // speed is in meters per second
         currentSpeed = pos.coords.speed;
+        currentLat = pos.coords.latitude;
+        currentLng = pos.coords.longitude;
       },
       () => {}, // ignore errors for now
       { enableHighAccuracy: true },
@@ -69,6 +73,8 @@ export function startSensorStream(
       },
       gps: {
         speed: currentSpeed,
+        latitude: currentLat,
+        longitude: currentLng,
       },
     });
   };
