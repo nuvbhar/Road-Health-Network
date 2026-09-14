@@ -42,6 +42,9 @@ export interface Report {
   lastReportedAt?: string;
   averageWeight?: number;
   degradationStatus?: "stable" | "degrading_rapidly";
+  waveformData?: number[] | null;
+  correlationScore?: number | null;
+  isConfirmed?: boolean;
 }
 
 export interface Vehicle {
@@ -111,4 +114,5 @@ export interface RoadEvent {
     roll: number;
     yaw: number;
   };
+  waveformData?: number[];
 }

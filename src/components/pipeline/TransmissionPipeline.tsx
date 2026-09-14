@@ -51,6 +51,7 @@ export const TransmissionPipeline: React.FC = () => {
                 // Pass extended telemetry
                 speed: event.speed,
                 gyroscope: event.gyroscope,
+                waveformData: event.waveformData,
               } as any)
               .catch((e) => console.warn("Failed to push to DB:", e));
           }

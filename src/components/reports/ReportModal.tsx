@@ -187,6 +187,75 @@ export const ReportModal: React.FC<ReportModalProps> = ({
             </div>
           </div>
 
+          {/* Spatial Confirmation & Waveform Section */}
+          <div className={styles.sectionGroup}>
+            <div className={styles.sectionTitle}>Cross-Car Spatial Confirmation</div>
+            <div style={{ padding: "var(--space-3)", backgroundColor: "var(--bg-elevated)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-light)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>
+                  {currentReport.isConfirmed
+                    ? "✓ Confirmed by Multiple Fleet Vehicles"
+                    : currentReport.independentReports > 1
+                    ? "Corroboration in Progress"
+                    : "Awaiting Spatial Corroboration"}
+                </span>
+                <span
+                  style={{
+                    fontSize: "0.75rem",
+                    padding: "2px 8px",
+                    borderRadius: "12px",
+                    fontWeight: 600,
+                    backgroundColor: currentReport.isConfirmed ? "rgba(22, 163, 74, 0.15)" : "rgba(217, 119, 6, 0.15)",
+                    color: currentReport.isConfirmed ? "var(--colour-ok)" : "var(--colour-warning)",
+                  }}
+                >
+                  {currentReport.isConfirmed ? "VERIFIED POTHOLE" : "PROVISIONAL"}
+                </span>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "0.8rem", color: "var(--text-secondary)", marginBottom: "8px" }}>
+                <div>Independent Cars: <strong style={{ color: "var(--text-primary)" }}>{currentReport.independentReports}</strong></div>
+                <div>Shape Match (r): <strong style={{ color: "var(--text-primary)" }}>{currentReport.correlationScore !== null && currentReport.correlationScore !== undefined ? `${(currentReport.correlationScore * 100).toFixed(0)}%` : "Pending Pair"}</strong></div>
+                <div>Vehicle Speed: <strong style={{ color: "var(--text-primary)" }}>{currentReport.speed ? `${(currentReport.speed * 3.6).toFixed(1)} km/h` : "N/A"}</strong></div>
+                <div>Z-Force Delta: <strong style={{ color: "var(--text-primary)" }}>{currentReport.weight ? `${currentReport.weight.toFixed(2)}g` : "N/A"}</strong></div>
+              </div>
+
+              {currentReport.waveformData && currentReport.waveformData.length > 0 && (
+                <div style={{ marginTop: "8px" }}>
+                  <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "4px" }}>
+                    Normalized G-Force Signature (666ms Window, 20 Samples):
+                  </div>
+                  <svg width="100%" height="45" viewBox="0 0 200 45" style={{ background: "var(--bg-surface)", borderRadius: "4px", border: "1px solid var(--border-light)" }}>
+                    {(() => {
+                      const pts = currentReport.waveformData;
+                      const min = Math.min(...pts);
+                      const max = Math.max(...pts);
+                      const range = max - min || 1;
+                      const polyPoints = pts
+                        .map((v, i) => {
+                          const x = (i / (pts.length - 1)) * 192 + 4;
+                          const y = 40 - ((v - min) / range) * 35;
+                          return `${x.toFixed(1)},${y.toFixed(1)}`;
+                        })
+                        .join(" ");
+                      return (
+                        <>
+                          <line x1="0" y1="22.5" x2="200" y2="22.5" stroke="var(--border-light)" strokeDasharray="3 3" />
+                          <polyline
+                            fill="none"
+                            stroke="#3b82f6"
+                            strokeWidth="2"
+                            points={polyPoints}
+                          />
+                        </>
+                      );
+                    })()}
+                  </svg>
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className={styles.sectionGroup}>
             <div className={styles.sectionTitle}>Verification & State</div>
 
