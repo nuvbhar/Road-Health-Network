@@ -175,10 +175,10 @@ export const LiveSensorPage: React.FC = () => {
           <Button
             variant={localState === "streaming" ? "danger" : "primary"}
             onClick={handleLocalToggle}
-            disabled={localState === "unsupported" || localState === "scanning"}
+            disabled={localState === "scanning"}
             title={
               localState === "unsupported"
-                ? "No accelerometer detected on this device"
+                ? "Missing required accelerometer, gyroscope, or GPS permissions."
                 : ""
             }
             style={{ width: "100%", marginTop: "var(--space-6)" }}
@@ -186,9 +186,9 @@ export const LiveSensorPage: React.FC = () => {
             {localState === "streaming"
               ? "Stop Local Sensor"
               : localState === "scanning"
-                ? "Scanning for Accelerometer..."
+                ? "Scanning Sensors..."
                 : localState === "unsupported"
-                  ? "⚠ No Accelerometer Detected"
+                  ? "⚠ Missing Required Sensors"
                   : "Start Local Sensor"}
           </Button>
         </div>

@@ -48,10 +48,10 @@ export const MobileSensorPage: React.FC = () => {
   }, [searchParams]);
 
   const handleStart = async () => {
-    const granted = await requestSensorAccess();
-    if (!granted) {
+    const statusObj = await requestSensorAccess();
+    if (!statusObj.accelerometer || !statusObj.gyroscope || !statusObj.gps) {
       alert(
-        "Accelerometer access denied. Ensure you are on HTTPS and explicitly grant permissions if prompted.",
+        "Missing required permissions. Accelerometer, Gyroscope, and Location access are required to stream data.",
       );
       return;
     }

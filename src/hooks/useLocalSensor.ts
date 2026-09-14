@@ -31,7 +31,7 @@ export function useLocalSensor(setActiveDevice: (device: string | null) => void,
     const status = await requestSensorAccess();
     setPermissions(status);
 
-    if (!status.accelerometer) {
+    if (!status.accelerometer || !status.gyroscope || !status.gps) {
       setLocalState("unsupported");
       return;
     }
