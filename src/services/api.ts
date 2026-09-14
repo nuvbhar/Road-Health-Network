@@ -189,10 +189,10 @@ export async function createReport(
   const { data: vehicleData } = await supabase.from("vehicles").select("trustScore, unverifiedReports").eq("id", vehicleRef);
   const vehicle = vehicleData?.[0] || { trustScore: 100.0, unverifiedReports: 0 };
   
-  if (vehicle.trustScore < 30) {
-    console.warn(`[Trust System] Dropping report from low-trust vehicle: ${vehicleRef}`);
-    return { id: "rejected-low-trust", corroborated: false, isConfirmed: false };
-  }
+  // if (vehicle.trustScore < 30) {
+  //   console.warn(`[Trust System] Dropping report from low-trust vehicle: ${vehicleRef}`);
+  //   return { id: "rejected-low-trust", corroborated: false, isConfirmed: false };
+  // }
 
   // 1. Fetch active reports to evaluate spatial confirmation across fleet vehicles
   const { data: activeRows } = await supabase
@@ -257,9 +257,6 @@ export async function createReport(
 
       if (confirmation.isConfirmed) {
         updatePayload.isConfirmed = true;
-        if (matched.status === "pending") {
-          updatePayload.status = "under_review";
-        }
       }
 
       const { error: updateErr } = await supabase
@@ -345,9 +342,9 @@ export async function createReport(
   }
 
   // --- HACKATHON: Trust Scoring (Unverified) ---
-  const newTrust = Math.max(0, vehicle.trustScore - 0.5); // Slight penalty for unverified
-  const newUnverified = vehicle.unverifiedReports + 1;
-  await supabase.from("vehicles").update({ trustScore: newTrust, unverifiedReports: newUnverified }).eq("id", vehicleRef);
+  // const newTrust = Math.max(0, vehicle.trustScore - 0.5); // Slight penalty for unverified
+  // const newUnverified = vehicle.unverifiedReports + 1;
+  // await supabase.from("vehicles").update({ trustScore: newTrust, unverifiedReports: newUnverified }).eq("id", vehicleRef);
 
   const sectorId = data.sectorId || "SEC-A";
   recalculateSectorHealth(sectorId).catch(console.error);

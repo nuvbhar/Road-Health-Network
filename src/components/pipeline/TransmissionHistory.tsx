@@ -17,7 +17,7 @@ export const TransmissionHistory: React.FC = () => {
   const entries: HistoryEntry[] = [];
 
   // The currently processing event
-  if (currentEvent && stage !== "idle") {
+  if (currentEvent && stage !== "idle" && stage !== "confirmed") {
     entries.push({ ...currentEvent, status: "pushing" });
   }
 
