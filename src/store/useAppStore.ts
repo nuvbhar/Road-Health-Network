@@ -36,6 +36,7 @@ interface AppState {
     reading: SensorReading | null;
     event: RoadEvent | null;
     metrics: EngineMetrics | null;
+    calibrationFactor: number;
   };
   transmission: {
     stage: "idle" | "processing" | "transmitted" | "confirmed";
@@ -54,6 +55,7 @@ interface AppState {
   setTransmissionStage: (
     stage: "idle" | "processing" | "transmitted" | "confirmed",
   ) => void;
+  setCalibrationFactor: (factor: number) => void;
   loadInitialData: () => Promise<void>;
 }
 
@@ -76,7 +78,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   sortColumn: "reportDate",
   sortDirection: "desc",
 
-  liveSensor: { connected: false, reading: null, event: null, metrics: null },
+  liveSensor: { connected: false, reading: null, event: null, metrics: null, calibrationFactor: 1.0 },
   transmission: { stage: "idle" },
 
   setStats: (stats) => set({ stats }),
@@ -115,6 +117,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       liveSensor: { ...state.liveSensor, metrics },
     })),
   setTransmissionStage: (stage) => set({ transmission: { stage } }),
+  setCalibrationFactor: (factor) =>
+    set((state) => ({
+      liveSensor: { ...state.liveSensor, calibrationFactor: factor },
+    })),
 
   loadInitialData: async () => {
     try {

@@ -61,7 +61,9 @@ export const MobileSensorPage: React.FC = () => {
     setStatus("Streaming Data (P2P)...");
 
     // Register the device as active in Supabase
-    await registerDevice();
+    const { calibrationFactor } = await registerDevice();
+    const { useAppStore } = await import("../store/useAppStore");
+    useAppStore.getState().setCalibrationFactor(calibrationFactor);
 
     // Callback that runs 30 times a second
     stopStreamRef.current = startSensorStream((reading: SensorReading) => {

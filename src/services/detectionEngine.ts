@@ -131,7 +131,14 @@ export function processSensorReading(
   onEvent: (event: RoadEvent) => void,
   onMetrics?: (metrics: any) => void,
 ) {
-  const rawZ = reading.accelerometer.z;
+  // --- HACKATHON: AUTO-CALIBRATION ---
+  // Fetch the current device's suspension calibration factor from the store.
+  // A heavy truck might have factor=1.5, a soft sedan factor=0.8
+  const { useAppStore } = require("../store/useAppStore");
+  const calibrationFactor = useAppStore.getState().liveSensor.calibrationFactor || 1.0;
+
+  // Apply calibration to the raw reading before processing
+  const rawZ = reading.accelerometer.z * calibrationFactor;
   const currentSpeed = reading.gps?.speed ?? null;
 
   zBuffer.push(rawZ);

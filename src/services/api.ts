@@ -150,6 +150,40 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   return R * c; // in metres
 }
 
+async function recalculateSectorHealth(sectorId: string) {
+  // Fetch active reports in this sector
+  const { data: reports } = await supabase
+    .from("reports")
+    .select("type, independentReports")
+    .eq("sectorId", sectorId)
+    .neq("status", "resolved");
+
+  let penalty = 0;
+  for (const r of (reports || [])) {
+    // Escalate penalty based on independent corroborations
+    const multiplier = Math.min(3, r.independentReports || 1);
+    if (r.type === "SEVERE_POTHOLE") {
+      penalty += 10 * multiplier;
+    } else if (r.type === "POTENTIAL_POTHOLE" || r.type === "ROAD_ANOMALY") {
+      penalty += 3 * multiplier;
+    } else if (r.type === "SPEED_BUMP") {
+      penalty += 1;
+    }
+  }
+
+  const healthIndex = Math.max(0, 100 - penalty);
+
+  // Update sector status based on RHI
+  let status = "normal";
+  if (healthIndex < 60) status = "defect";
+  else if (healthIndex < 85) status = "caution";
+
+  await supabase
+    .from("sectors")
+    .update({ healthIndex, status })
+    .eq("id", sectorId);
+}
+
 export async function createReport(
   data: Partial<Report>,
 ): Promise<{ id: string; corroborated: boolean }> {
@@ -157,6 +191,15 @@ export async function createReport(
   const lon = data.longitude || 0;
   const reportType = data.type || "ROAD_ANOMALY";
   const vehicleRef = data.vehicleRef || "User-UNKNOWN";
+
+  // --- HACKATHON: False-Positive Filtering ---
+  const { data: vehicleData } = await supabase.from("vehicles").select("trustScore, unverifiedReports").eq("id", vehicleRef);
+  const vehicle = vehicleData?.[0] || { trustScore: 100.0, unverifiedReports: 0 };
+  
+  if (vehicle.trustScore < 30) {
+    console.warn(`[Trust System] Dropping report from low-trust vehicle: ${vehicleRef}`);
+    return { id: "rejected-low-trust", corroborated: false };
+  }
 
   // 1. Check for nearby active reports of same type
   const { data: activeReports } = await supabase
@@ -190,7 +233,22 @@ export async function createReport(
       await supabase.from("report_vehicles").insert({ reportId: matchedReport.id, vehicleRef });
       
       const newCount = matchedReport.independentReports + 1;
-      await supabase.from("reports").update({ independentReports: newCount }).eq("id", matchedReport.id);
+      const newWeight = data.weight || 0;
+      
+      const currentAvg = matchedReport.averageWeight || matchedReport.weight || 0;
+      const updatedAvg = ((currentAvg * matchedReport.independentReports) + newWeight) / newCount;
+      
+      let degradationStatus = matchedReport.degradationStatus || "stable";
+      if (newCount >= 3 && updatedAvg > currentAvg * 1.15) {
+        degradationStatus = "degrading_rapidly";
+      }
+
+      await supabase.from("reports").update({ 
+        independentReports: newCount,
+        lastReportedAt: new Date().toISOString(),
+        averageWeight: updatedAvg,
+        degradationStatus
+      }).eq("id", matchedReport.id);
 
       const { data: updatedData } = await supabase
         .from("reports")
@@ -203,7 +261,14 @@ export async function createReport(
       if (updated.independentReports >= 3 && updated.status === "pending") {
         await supabase.from("reports").update({ status: "under_review" }).eq("id", matchedReport.id);
       }
+
+      // --- HACKATHON: Trust Scoring (Corroborated) ---
+      const newTrust = Math.min(100, vehicle.trustScore + 2);
+      const newUnverified = Math.max(0, vehicle.unverifiedReports - 1);
+      await supabase.from("vehicles").update({ trustScore: newTrust, unverifiedReports: newUnverified }).eq("id", vehicleRef);
     }
+
+    recalculateSectorHealth(matchedReport.sectorId).catch(console.error);
 
     return { id: matchedReport.id, corroborated: true };
   }
@@ -211,9 +276,10 @@ export async function createReport(
   // 2. No nearby report found, create a new one
   const id = data.id || `RPT-${Math.floor(1000 + Math.random() * 9000)}`;
   
+  const reportDate = data.reportDate || new Date().toISOString();
   const { error } = await supabase.from("reports").insert({
     id,
-    reportDate: data.reportDate || new Date().toISOString(),
+    reportDate,
     sectorId: data.sectorId || "SEC-A",
     sectorName: data.sectorName || "Kharar-CU Sector A",
     roadReference: data.roadReference || "Unknown",
@@ -231,6 +297,10 @@ export async function createReport(
     gyroPitch: data.gyroscope?.pitch || null,
     gyroRoll: data.gyroscope?.roll || null,
     gyroYaw: data.gyroscope?.yaw || null,
+    firstReportedAt: reportDate,
+    lastReportedAt: reportDate,
+    averageWeight: data.weight || 0,
+    degradationStatus: "stable",
   });
 
   if (error) throw error;
@@ -241,6 +311,14 @@ export async function createReport(
   } else {
     await supabase.from("report_vehicles").insert({ reportId: id, vehicleRef });
   }
+
+  // --- HACKATHON: Trust Scoring (Unverified) ---
+  const newTrust = Math.max(0, vehicle.trustScore - 0.5); // Slight penalty for unverified
+  const newUnverified = vehicle.unverifiedReports + 1;
+  await supabase.from("vehicles").update({ trustScore: newTrust, unverifiedReports: newUnverified }).eq("id", vehicleRef);
+
+  const sectorId = data.sectorId || "SEC-A";
+  recalculateSectorHealth(sectorId).catch(console.error);
 
   return { id, corroborated: false };
 }

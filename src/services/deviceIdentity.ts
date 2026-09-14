@@ -14,9 +14,10 @@ export function getOrCreateDeviceId(): string {
 
 export async function registerDevice(sectorId: string = "SEC-A") {
   const deviceId = getOrCreateDeviceId();
+  let calibrationFactor = 1.0;
   
   try {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("vehicles")
       .upsert(
         {
@@ -26,14 +27,17 @@ export async function registerDevice(sectorId: string = "SEC-A") {
           lastSeenAt: new Date().toISOString(),
         },
         { onConflict: "id" }
-      );
+      )
+      .select();
       
     if (error) {
       console.warn("[Device Identity] Failed to register device:", error);
+    } else if (data && data.length > 0) {
+      calibrationFactor = data[0].calibrationFactor || 1.0;
     }
   } catch (e) {
     console.error("[Device Identity] Exception registering device:", e);
   }
   
-  return deviceId;
+  return { deviceId, calibrationFactor };
 }

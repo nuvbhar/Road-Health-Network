@@ -12,6 +12,7 @@ export interface Sector {
     endLat: number;
     endLng: number;
   };
+  healthIndex?: number;
 }
 
 export type ReportType = "POTENTIAL_POTHOLE" | "SEVERE_POTHOLE";
@@ -36,6 +37,11 @@ export interface Report {
   // Extended telemetry
   speed?: number | null;
   gyroscope?: { pitch: number; roll: number; yaw: number } | null;
+  // Degradation tracking
+  firstReportedAt?: string;
+  lastReportedAt?: string;
+  averageWeight?: number;
+  degradationStatus?: "stable" | "degrading_rapidly";
 }
 
 export interface Vehicle {
@@ -44,6 +50,9 @@ export interface Vehicle {
   status: "active" | "idle" | "offline";
   reportsToday: number;
   lastSeenAt: string;
+  calibrationFactor: number;
+  trustScore?: number;
+  unverifiedReports?: number;
 }
 
 export interface AppStats {
