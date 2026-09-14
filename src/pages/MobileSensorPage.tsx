@@ -8,12 +8,14 @@ import { SensorReading } from "../store/types";
 import { Button } from "../components/shared/Button";
 import { useSearchParams } from "react-router-dom";
 import Peer, { DataConnection } from "peerjs";
+import { getOrCreateDeviceId, registerDevice } from "../services/deviceIdentity";
 
 export const MobileSensorPage: React.FC = () => {
   const [isActive, setIsActive] = useState(false);
   const [status, setStatus] = useState("Disconnected");
   const [lastEvent, setLastEvent] = useState<any>(null);
   const [searchParams] = useSearchParams();
+  const deviceId = getOrCreateDeviceId();
 
   const peerConnRef = useRef<DataConnection | null>(null);
   const stopStreamRef = useRef<(() => void) | null>(null);
@@ -58,6 +60,9 @@ export const MobileSensorPage: React.FC = () => {
     setIsActive(true);
     setStatus("Streaming Data (P2P)...");
 
+    // Register the device as active in Supabase
+    await registerDevice();
+
     // Callback that runs 30 times a second
     stopStreamRef.current = startSensorStream((reading: SensorReading) => {
       // 1. Send reading over P2P
@@ -92,7 +97,7 @@ export const MobileSensorPage: React.FC = () => {
             confidence: event.confidence,
             latitude: lat,
             longitude: lng,
-            vehicleRef: "V-MOBILE-NODE",
+            vehicleRef: deviceId,
             speed: event.speed,
             gyroscope: event.gyroscope,
             weight: event.weight,

@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useAppStore } from "../../store/useAppStore";
 import { CheckCircleIcon, AlertTriangleIcon } from "../shared/Icons";
 import styles from "./TransmissionPipeline.module.css";
+import { getOrCreateDeviceId, registerDevice } from "../../services/deviceIdentity";
 
 export const TransmissionPipeline: React.FC = () => {
   const event = useAppStore((state) => state.liveSensor.event);
@@ -15,6 +16,9 @@ export const TransmissionPipeline: React.FC = () => {
     if (event && event.detected && stage === "idle") {
       setTransmissionStage("processing");
 
+      // Register device on first transmission
+      registerDevice();
+
       // Encrypting...
       setTimeout(() => {
         setTransmissionStage("transmitted");
@@ -24,9 +28,8 @@ export const TransmissionPipeline: React.FC = () => {
           setTransmissionStage("confirmed");
 
           if (event && event.type) {
-            const uuid = crypto.randomUUID
-              ? crypto.randomUUID()
-              : "User-" + Math.floor(Math.random() * 9999999);
+            const uuid = getOrCreateDeviceId();
+            
             useAppStore
               .getState()
               .addReport({
