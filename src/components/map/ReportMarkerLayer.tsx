@@ -50,7 +50,7 @@ export const ReportMarkerLayer: React.FC<ReportMarkerLayerProps> = ({
                 style={{ minWidth: "200px" }}
               >
                 <div className={styles.popupHeader}>
-                  <span>{typeInfo.icon}</span>
+                  {typeInfo.icon}
                   <span>{typeInfo.label}</span>
                 </div>
                 <div className={styles.popupContent}>

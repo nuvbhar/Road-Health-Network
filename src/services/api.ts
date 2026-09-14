@@ -52,7 +52,7 @@ export async function fetchSectors(): Promise<Sector[]> {
 export async function fetchReports(
   filters?: Record<string, string>,
 ): Promise<Report[]> {
-  let query = supabase.from("reports").select("*, report_vehicles(vehicleRef, offsetMeters)").order("id", { ascending: false });
+  let query = supabase.from("reports").select("*, report_vehicles(vehicleRef, offsetMeters, timestamp)").order("id", { ascending: false });
 
   if (filters?.sectorId && filters.sectorId !== "all") {
     query = query.eq("sectorId", filters.sectorId);
@@ -67,7 +67,8 @@ export async function fetchReports(
   return (reportsData || []).map((r: any) => {
     const vehicles = (r.report_vehicles || []).map((v: any) => ({
       id: v.vehicleRef,
-      offsetMeters: v.offsetMeters || 0
+      offsetMeters: v.offsetMeters || 0,
+      timestamp: v.timestamp
     }));
     const result: any = {
       ...r,
@@ -213,6 +214,7 @@ export async function createReport(
 
   let matchedReport: any = null;
   let matchedDist: number = 0;
+  const reportDate = data.reportDate || new Date().toISOString();
   for (const r of (activeReports || [])) {
     if (r.latitude && r.longitude) {
       const dist = getDistance(lat, lon, r.latitude, r.longitude);
@@ -238,7 +240,8 @@ export async function createReport(
       await supabase.from("report_vehicles").insert({ 
         reportId: matchedReport.id, 
         vehicleRef,
-        offsetMeters: matchedDist
+        offsetMeters: matchedDist,
+        timestamp: reportDate
       });
       
       const newCount = matchedReport.independentReports + 1;
@@ -285,7 +288,6 @@ export async function createReport(
   // 2. No nearby report found, create a new one
   const id = data.id || `RPT-${Math.floor(1000 + Math.random() * 9000)}`;
   
-  const reportDate = data.reportDate || new Date().toISOString();
   const { error } = await supabase.from("reports").insert({
     id,
     reportDate,
@@ -315,10 +317,14 @@ export async function createReport(
   if (error) throw error;
 
   if (data.reportingVehicles && Array.isArray(data.reportingVehicles)) {
-    const records = data.reportingVehicles.map((v: any) => ({ reportId: id, vehicleRef: v.id || v }));
+    const records = data.reportingVehicles.map((v: any) => ({ 
+      reportId: id, 
+      vehicleRef: v.id || v,
+      timestamp: v.timestamp || reportDate
+    }));
     await supabase.from("report_vehicles").insert(records);
   } else {
-    await supabase.from("report_vehicles").insert({ reportId: id, vehicleRef });
+    await supabase.from("report_vehicles").insert({ reportId: id, vehicleRef, timestamp: reportDate });
   }
 
   // --- HACKATHON: Trust Scoring (Unverified) ---

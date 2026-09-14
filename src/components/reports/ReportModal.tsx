@@ -316,9 +316,12 @@ export const ReportModal: React.FC<ReportModalProps> = ({
                                 background: "var(--bg-surface)",
                                 padding: "2px 6px",
                                 borderRadius: "4px",
-                                border: "1px solid var(--border-light)"
+                                border: "1px solid var(--border-light)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center"
                               }}>
-                                {v.offsetMeters.toFixed(1)}m offset
+                                {v.offsetMeters.toFixed(1)}m
                               </div>
                             )}
                           </div>
@@ -334,15 +337,13 @@ export const ReportModal: React.FC<ReportModalProps> = ({
                           >
                             <span>
                               Recorded:{" "}
-                              {new Date(
-                                new Date(currentReport.reportDate).getTime() +
-                                  idx * 1000 * 60 * 15,
-                              ).toLocaleTimeString([], {
+                              {new Date(v.timestamp || currentReport.reportDate).toLocaleString([], {
+                                month: "short",
+                                day: "numeric",
                                 hour: "2-digit",
-                                minute: "2-digit",
+                                minute: "2-digit"
                               })}
                             </span>
-                            <span>Offset: +{(idx * 4.2).toFixed(1)}m</span>
                           </div>
                         </div>
                       ))}
