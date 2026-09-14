@@ -1,0 +1,1 @@
+﻿ALTER TABLE reports ADD COLUMN speed REAL, ADD COLUMN "gyroPitch" REAL, ADD COLUMN "gyroRoll" REAL, ADD COLUMN "gyroYaw" REAL;

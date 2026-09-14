@@ -33,6 +33,9 @@ export interface Report {
   latitude: number;
   longitude: number;
   reportingVehicles: string[];
+  // Extended telemetry
+  speed?: number | null;
+  gyroscope?: { pitch: number; roll: number; yaw: number } | null;
 }
 
 export interface Vehicle {

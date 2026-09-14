@@ -214,6 +214,10 @@ export async function createReport(
     latitude: lat,
     longitude: lon,
     independentReports: data.independentReports || 1,
+    speed: data.speed || null,
+    gyroPitch: data.gyroscope?.pitch || null,
+    gyroRoll: data.gyroscope?.roll || null,
+    gyroYaw: data.gyroscope?.yaw || null,
   });
 
   if (error) throw error;

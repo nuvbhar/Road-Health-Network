@@ -37,15 +37,18 @@ export const TransmissionPipeline: React.FC = () => {
                 weight: event.weight || 0,
                 source: "VEHICLE_SENSOR",
                 vehicleRef: uuid,
-                sectorId: "SEC-B",
+                sectorId: "SEC-B", // Ideally resolved via geofence, but mocked for now
                 sectorName: "Kharar-CU Sector B",
                 roadReference: "Live Demo Route",
-                latitude: 30.748 + Math.random() * 0.005,
-                longitude: 76.645 + Math.random() * 0.005,
+                latitude: event.latitude || 30.748 + Math.random() * 0.005,
+                longitude: event.longitude || 76.645 + Math.random() * 0.005,
                 status: "pending",
                 independentReports: 1,
                 reportingVehicles: [uuid],
-              })
+                // Pass extended telemetry
+                speed: event.speed,
+                gyroscope: event.gyroscope,
+              } as any)
               .catch((e) => console.warn("Failed to push to DB:", e));
           }
 
