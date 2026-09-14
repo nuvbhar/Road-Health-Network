@@ -1,4 +1,5 @@
 import { SensorReading, RoadEvent } from "../store/types";
+import { useAppStore } from "../store/useAppStore";
 import * as tf from "@tensorflow/tfjs";
 
 // Configuration for Contextual Anomaly Detection
@@ -134,7 +135,6 @@ export function processSensorReading(
   // --- HACKATHON: AUTO-CALIBRATION ---
   // Fetch the current device's suspension calibration factor from the store.
   // A heavy truck might have factor=1.5, a soft sedan factor=0.8
-  const { useAppStore } = require("../store/useAppStore");
   const calibrationFactor = useAppStore.getState().liveSensor.calibrationFactor || 1.0;
 
   // Apply calibration to the raw reading before processing

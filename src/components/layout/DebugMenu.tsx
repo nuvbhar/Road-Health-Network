@@ -14,7 +14,6 @@ export const DebugMenu: React.FC = () => {
   const [mockCount, setMockCount] = useState(5);
   
   const loadInitialData = useAppStore((state) => state.loadInitialData);
-  const existingReports = useAppStore((state) => state.reports);
 
   const [testScenario, setTestScenario] = useState<"random" | "degradation" | "rhi" | "trust">("random");
 

@@ -99,6 +99,9 @@ export const mockVehicles: Vehicle[] = Array.from({ length: 174 }, (_, i) => ({
   lastSeenAt: new Date(
     Date.now() - (i < 124 ? Math.random() * 300000 : Math.random() * 3600000),
   ).toISOString(),
+  calibrationFactor: 1.0,
+  trustScore: 100,
+  unverifiedReports: 0,
 }));
 
 export const mockTrend: TrendDataPoint[] = Array.from(

@@ -15,7 +15,7 @@ export interface Sector {
   healthIndex?: number;
 }
 
-export type ReportType = "POTENTIAL_POTHOLE" | "SEVERE_POTHOLE";
+export type ReportType = "POTENTIAL_POTHOLE" | "SEVERE_POTHOLE" | "ROAD_ANOMALY" | "SPEED_BUMP" | "TRAFFIC_HAZARD";
 
 export interface Report {
   id: string;
