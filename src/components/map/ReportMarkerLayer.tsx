@@ -100,7 +100,7 @@ export const ReportMarkerLayer: React.FC<ReportMarkerLayerProps> = ({
                       >
                         {report.reportingVehicles?.map((v) => (
                           <span
-                            key={v}
+                            key={v.id}
                             style={{
                               fontSize: "9px",
                               padding: "1px 4px",
@@ -110,7 +110,7 @@ export const ReportMarkerLayer: React.FC<ReportMarkerLayerProps> = ({
                               fontFamily: "monospace",
                             }}
                           >
-                            {v.substring(0, 5)}
+                            {v.id.substring(0, 5)}
                           </span>
                         ))}
                       </div>

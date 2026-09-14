@@ -82,9 +82,9 @@ export const ReportRow: React.FC<ReportRowProps> = React.memo(
 
         <div className={styles.cell}>
           <div className={styles.corroborationStack}>
-            {report.reportingVehicles?.slice(0, 2).map((vId, i) => (
-              <span key={i} className={styles.vehiclePill} title={vId}>
-                {vId.substring(0, 8)}
+            {report.reportingVehicles?.slice(0, 2).map((v, i) => (
+              <span key={i} className={styles.vehiclePill} title={v.id}>
+                {v.id.substring(0, 8)}
               </span>
             ))}
             {report.independentReports > 2 && (

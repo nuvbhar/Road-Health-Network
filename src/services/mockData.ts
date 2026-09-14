@@ -85,9 +85,10 @@ export const mockReports: Report[] = Array.from({ length: 30 }, (_, i) => {
     longitude:
       sector.bounds.startLng +
       (sector.bounds.endLng - sector.bounds.startLng) * Math.random(),
-    reportingVehicles: Array.from({ length: independentReportsCount }, () =>
-      generateMockUUID(),
-    ),
+    reportingVehicles: Array.from({ length: independentReportsCount }, () => ({
+      id: generateMockUUID(),
+      offsetMeters: parseFloat((Math.random() * 20).toFixed(1))
+    })),
   };
 });
 

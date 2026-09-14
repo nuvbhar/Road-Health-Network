@@ -315,7 +315,7 @@ export async function createReport(
   if (error) throw error;
 
   if (data.reportingVehicles && Array.isArray(data.reportingVehicles)) {
-    const records = data.reportingVehicles.map((v: string) => ({ reportId: id, vehicleRef: v }));
+    const records = data.reportingVehicles.map((v: any) => ({ reportId: id, vehicleRef: v.id || v }));
     await supabase.from("report_vehicles").insert(records);
   } else {
     await supabase.from("report_vehicles").insert({ reportId: id, vehicleRef });
