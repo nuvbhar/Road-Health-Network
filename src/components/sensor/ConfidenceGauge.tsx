@@ -4,18 +4,66 @@ import styles from "./ConfidenceGauge.module.css";
 
 export const ConfidenceGauge: React.FC = () => {
   const event = useAppStore((state) => state.liveSensor.event);
+  const metrics = useAppStore((state) => state.liveSensor.metrics);
 
-  const confidence = event?.confidence || 0;
+  const hasEvent = Boolean(event && event.detected);
+
+  // Dynamic live responsiveness:
+  // When no event is locked, calculate live anomaly probability directly from instantaneous zForce and SNR
+  const liveIntensity = metrics
+    ? Math.min(
+        98,
+        Math.max(
+          4,
+          Math.round((metrics.zForce / 0.8) * 60 + Math.max(0, metrics.snr - 1) * 12),
+        ),
+      )
+    : 0;
+
+  const displayConfidence = hasEvent ? (event?.confidence || 50) : liveIntensity;
 
   let colour = "var(--text-muted)";
-  if (confidence > 80) colour = "var(--colour-danger)";
-  else if (confidence > 50) colour = "var(--colour-warning)";
-  else if (confidence > 0) colour = "var(--colour-ok)";
-  else if (event) colour = "var(--colour-ok)"; // 0% but active
+  if (displayConfidence > 75) colour = "var(--colour-danger)";
+  else if (displayConfidence > 45) colour = "var(--colour-warning)";
+  else if (displayConfidence > 12) colour = "var(--colour-ok)";
+
+  const label = hasEvent
+    ? (event?.type ? event.type.replace(/_/g, " ") : "Anomaly Detected")
+    : displayConfidence > 50
+    ? "High Impact Shock"
+    : displayConfidence > 25
+    ? "Road Vibration"
+    : "Live Sensitivity";
 
   return (
     <div className={styles.container} aria-live="assertive">
-      <h3 className={styles.title}>Event Confidence</h3>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "var(--space-2)",
+        }}
+      >
+        <h3 className={styles.title} style={{ margin: 0 }}>
+          {hasEvent ? "Detected Anomaly" : "Live Shock Gauge"}
+        </h3>
+        {hasEvent && (
+          <span
+            style={{
+              fontSize: "0.7rem",
+              padding: "2px 6px",
+              borderRadius: "4px",
+              backgroundColor: "rgba(220, 38, 38, 0.15)",
+              color: "var(--colour-danger)",
+              fontWeight: 700,
+            }}
+          >
+            LOCKED
+          </span>
+        )}
+      </div>
+
       <div className={styles.gaugeWrapper}>
         <svg
           width="200"
@@ -29,9 +77,9 @@ export const ConfidenceGauge: React.FC = () => {
             fill="none"
             stroke="var(--bg-inset)"
             strokeWidth="16"
-            strokeLinecap={event ? "round" : "butt"}
+            strokeLinecap={hasEvent || displayConfidence > 10 ? "round" : "butt"}
             pathLength="100"
-            strokeDasharray={event ? "none" : "2 6"}
+            strokeDasharray={hasEvent || displayConfidence > 10 ? "none" : "2 6"}
           />
           {/* Foreground arc */}
           <path
@@ -42,20 +90,24 @@ export const ConfidenceGauge: React.FC = () => {
             strokeLinecap="round"
             pathLength="100"
             strokeDasharray="100"
-            strokeDashoffset={100 - confidence}
+            strokeDashoffset={100 - displayConfidence}
             className={styles.arc}
-            style={{ transition: "stroke-dashoffset 1s ease-out, stroke 0.3s" }}
+            style={{
+              transition: "stroke-dashoffset 0.12s ease-out, stroke 0.15s ease",
+            }}
           />
         </svg>
         <div className={styles.valueDisplay}>
           <span
             className={styles.value}
-            style={{ color: event ? colour : "var(--text-muted)" }}
+            style={{
+              color: displayConfidence > 10 ? colour : "var(--text-muted)",
+            }}
           >
-            {event ? `${confidence}%` : "---"}
+            {metrics || hasEvent ? `${displayConfidence}%` : "---"}
           </span>
           <span className={styles.label}>
-            {event ? "Probability" : "Waiting..."}
+            {metrics || hasEvent ? label : "Waiting..."}
           </span>
         </div>
       </div>

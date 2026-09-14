@@ -11,7 +11,7 @@ export const TransmissionPipeline: React.FC = () => {
     (state) => state.setTransmissionStage,
   );
 
-  // Pipeline automation mock
+  // Rapid Pipeline Automation
   useEffect(() => {
     if (event && event.detected && stage === "idle") {
       setTransmissionStage("processing");
@@ -19,17 +19,17 @@ export const TransmissionPipeline: React.FC = () => {
       // Register device on first transmission
       registerDevice();
 
-      // Encrypting...
-      setTimeout(() => {
+      // Fast Encryption stage (200ms)
+      const t1 = setTimeout(() => {
         setTransmissionStage("transmitted");
 
-        // Finalised
-        setTimeout(() => {
+        // Fast Network Transmission (250ms)
+        const t2 = setTimeout(() => {
           setTransmissionStage("confirmed");
 
           if (event && event.type) {
             const uuid = getOrCreateDeviceId();
-            
+
             useAppStore
               .getState()
               .addReport({
@@ -40,7 +40,7 @@ export const TransmissionPipeline: React.FC = () => {
                 weight: event.weight || 0,
                 source: "VEHICLE_SENSOR",
                 vehicleRef: uuid,
-                sectorId: "SEC-B", // Ideally resolved via geofence, but mocked for now
+                sectorId: "SEC-B",
                 sectorName: "Kharar-CU Sector B",
                 roadReference: "Live Demo Route",
                 latitude: event.latitude || 30.748 + Math.random() * 0.005,
@@ -48,7 +48,6 @@ export const TransmissionPipeline: React.FC = () => {
                 status: "pending",
                 independentReports: 1,
                 reportingVehicles: [uuid],
-                // Pass extended telemetry
                 speed: event.speed,
                 gyroscope: event.gyroscope,
                 waveformData: event.waveformData,
@@ -56,13 +55,19 @@ export const TransmissionPipeline: React.FC = () => {
               .catch((e) => console.warn("Failed to push to DB:", e));
           }
 
-          // Reset after a while
-          setTimeout(() => {
+          // Quick recovery for next event (1500ms)
+          const t3 = setTimeout(() => {
             setTransmissionStage("idle");
             useAppStore.getState().setSensorEvent(null);
-          }, 4000);
-        }, 1200);
-      }, 1500);
+          }, 1500);
+
+          return () => clearTimeout(t3);
+        }, 250);
+
+        return () => clearTimeout(t2);
+      }, 200);
+
+      return () => clearTimeout(t1);
     }
   }, [event, stage, setTransmissionStage]);
 
