@@ -57,6 +57,9 @@ export const TransmissionPipeline: React.FC = () => {
                 waveformData: event.waveformData,
               } as any)
               .catch((e) => console.warn("Failed to push to DB:", e));
+
+            // Track in session history
+            useAppStore.getState().addSessionHistoryItem(event);
           }
 
           const t3 = setTimeout(() => {

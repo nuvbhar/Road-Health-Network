@@ -36,6 +36,7 @@ interface AppState {
     reading: SensorReading | null;
     event: RoadEvent | null;
     queue: RoadEvent[];
+    sessionHistory: RoadEvent[];
     metrics: EngineMetrics | null;
     calibrationFactor: number;
   };
@@ -55,6 +56,7 @@ interface AppState {
   enqueueSensorEvent: (event: RoadEvent) => void;
   dequeueSensorEvent: () => void;
   removeSensorEventFromQueue: (index: number) => void;
+  addSessionHistoryItem: (event: RoadEvent) => void;
   setEngineMetrics: (metrics: EngineMetrics) => void;
   setTransmissionStage: (
     stage: "idle" | "processing" | "transmitted" | "confirmed",
@@ -82,7 +84,7 @@ export const useAppStore = create<AppState>((set) => ({
   sortColumn: "reportDate",
   sortDirection: "desc",
 
-  liveSensor: { connected: false, reading: null, event: null, queue: [], metrics: null, calibrationFactor: 1.0 },
+  liveSensor: { connected: false, reading: null, event: null, queue: [], sessionHistory: [], metrics: null, calibrationFactor: 1.0 },
   transmission: { stage: "idle" },
 
   setStats: (stats) => set({ stats }),
@@ -135,6 +137,13 @@ export const useAppStore = create<AppState>((set) => ({
         liveSensor: { ...state.liveSensor, queue: newQueue },
       };
     }),
+  addSessionHistoryItem: (event: RoadEvent) =>
+    set((state) => ({
+      liveSensor: {
+        ...state.liveSensor,
+        sessionHistory: [event, ...state.liveSensor.sessionHistory],
+      },
+    })),
   setEngineMetrics: (metrics) =>
     set((state) => ({
       liveSensor: { ...state.liveSensor, metrics },
