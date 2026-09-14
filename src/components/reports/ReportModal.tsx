@@ -135,10 +135,12 @@ export const ReportModal: React.FC<ReportModalProps> = ({
               <div className={styles.metaItem}>
                 <div className={styles.label}>Date Detected</div>
                 <div className={styles.value}>
-                  {new Date(currentReport.reportDate).toLocaleDateString([], {
+                  {new Date(currentReport.reportDate).toLocaleString([], {
                     day: "numeric",
                     month: "short",
                     year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
                   })}
                 </div>
               </div>
@@ -270,35 +272,55 @@ export const ReportModal: React.FC<ReportModalProps> = ({
                       }}
                     >
                       {currentReport.reportingVehicles?.map((v, idx) => (
-                        <div key={v} className={styles.corroboratorCard}>
+                        <div key={v.id} className={styles.corroboratorCard}>
                           <div
                             style={{
                               display: "flex",
-                              flexDirection: "column",
-                              gap: "2px",
+                              justifyContent: "space-between",
+                              alignItems: "flex-start",
                             }}
                           >
-                            <span
+                            <div
                               style={{
-                                fontWeight: 600,
-                                fontSize: "0.9rem",
-                                color: "var(--text-primary)",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "2px",
                               }}
                             >
-                              {idx === 0
-                                ? "Primary Sensor"
-                                : `Corroborator #${idx}`}
-                            </span>
-                            <span
-                              style={{
-                                fontFamily: "monospace",
+                              <span
+                                style={{
+                                  fontWeight: 600,
+                                  fontSize: "0.9rem",
+                                  color: "var(--text-primary)",
+                                }}
+                              >
+                                {idx === 0
+                                  ? "Primary Sensor"
+                                  : `Corroborator #${idx}`}
+                              </span>
+                              <span
+                                style={{
+                                  fontFamily: "monospace",
+                                  fontSize: "0.75rem",
+                                  color: "var(--text-muted)",
+                                  wordBreak: "break-all",
+                                }}
+                              >
+                                {v.id}
+                              </span>
+                            </div>
+                            {idx !== 0 && v.offsetMeters !== undefined && (
+                              <div style={{
                                 fontSize: "0.75rem",
-                                color: "var(--text-muted)",
-                                wordBreak: "break-all",
-                              }}
-                            >
-                              {v}
-                            </span>
+                                color: "var(--text-secondary)",
+                                background: "var(--bg-surface)",
+                                padding: "2px 6px",
+                                borderRadius: "4px",
+                                border: "1px solid var(--border-light)"
+                              }}>
+                                {v.offsetMeters.toFixed(1)}m offset
+                              </div>
+                            )}
                           </div>
                           <div
                             style={{

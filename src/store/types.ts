@@ -33,7 +33,7 @@ export interface Report {
   independentReports: number;
   latitude: number;
   longitude: number;
-  reportingVehicles: string[];
+  reportingVehicles: { id: string; offsetMeters?: number }[];
   // Extended telemetry
   speed?: number | null;
   gyroscope?: { pitch: number; roll: number; yaw: number } | null;

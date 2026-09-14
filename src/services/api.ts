@@ -52,7 +52,7 @@ export async function fetchSectors(): Promise<Sector[]> {
 export async function fetchReports(
   filters?: Record<string, string>,
 ): Promise<Report[]> {
-  let query = supabase.from("reports").select("*, report_vehicles(vehicleRef)").order("id", { ascending: false });
+  let query = supabase.from("reports").select("*, report_vehicles(vehicleRef, offsetMeters)").order("id", { ascending: false });
 
   if (filters?.sectorId && filters.sectorId !== "all") {
     query = query.eq("sectorId", filters.sectorId);
@@ -65,7 +65,10 @@ export async function fetchReports(
   if (error) throw error;
 
   return (reportsData || []).map((r: any) => {
-    const vehicles = (r.report_vehicles || []).map((v: any) => v.vehicleRef);
+    const vehicles = (r.report_vehicles || []).map((v: any) => ({
+      id: v.vehicleRef,
+      offsetMeters: v.offsetMeters || 0
+    }));
     const result: any = {
       ...r,
       rawDataShared: !!r.rawDataShared,
@@ -209,11 +212,13 @@ export async function createReport(
     .eq("type", reportType);
 
   let matchedReport: any = null;
+  let matchedDist: number = 0;
   for (const r of (activeReports || [])) {
     if (r.latitude && r.longitude) {
       const dist = getDistance(lat, lon, r.latitude, r.longitude);
       if (dist <= 50) {
         matchedReport = r;
+        matchedDist = dist;
         break;
       }
     }
@@ -230,7 +235,11 @@ export async function createReport(
     const existingVehicle = existingVehicles?.[0];
 
     if (!existingVehicle) {
-      await supabase.from("report_vehicles").insert({ reportId: matchedReport.id, vehicleRef });
+      await supabase.from("report_vehicles").insert({ 
+        reportId: matchedReport.id, 
+        vehicleRef,
+        offsetMeters: matchedDist
+      });
       
       const newCount = matchedReport.independentReports + 1;
       const newWeight = data.weight || 0;

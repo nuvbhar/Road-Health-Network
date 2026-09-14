@@ -58,12 +58,11 @@ export const DebugMenu: React.FC = () => {
         const availableSectors = (dbSectors && dbSectors.length > 0) ? dbSectors : mockSectors;
 
         const { data: existingReportsDB } = await supabase.from("reports").select("id, type, sectorId, sectorName, latitude, longitude").neq("status", "resolved");
-        const activeReports = existingReportsDB ? [...existingReportsDB] : [];
-
         const allTypes: any[] = ["POTENTIAL_POTHOLE", "SEVERE_POTHOLE", "TRAFFIC_HAZARD"];
-        
+        const promises = [];
+
         for (let i = 0; i < mockCount; i++) {
-          const shouldCorroborate = activeReports.length > 0 && Math.random() < 0.4;
+          const shouldCorroborate = existingReportsDB && existingReportsDB.length > 0 && Math.random() < 0.4;
           
           let lat = 0;
           let lng = 0;
@@ -72,11 +71,10 @@ export const DebugMenu: React.FC = () => {
           let sectorName = "";
 
           if (shouldCorroborate) {
-            const target = activeReports[Math.floor(Math.random() * activeReports.length)];
+            const target = existingReportsDB[Math.floor(Math.random() * existingReportsDB.length)];
             type = target.type;
             sectorId = target.sectorId;
             sectorName = target.sectorName;
-            // Generate extremely close so backend logic matches it (within 50m)
             lat = target.latitude + (Math.random() - 0.5) * 0.0002; 
             lng = target.longitude + (Math.random() - 0.5) * 0.0002;
           } else {
@@ -102,28 +100,26 @@ export const DebugMenu: React.FC = () => {
           const hex = () => Math.random().toString(16).slice(2, 10);
           const mockUUID = `MOCK-${hex()}-${hex().slice(0, 4)}`;
           
-          const res = await createReport({
-            type,
-            sectorId,
-            sectorName,
-            latitude: Number(lat.toFixed(6)),
-            longitude: Number(lng.toFixed(6)),
-            weight: Number((Math.random() * 8 + 1).toFixed(1)),
-            confidence: Math.floor(Math.random() * 90) + 10,
-            vehicleRef: mockUUID,
-          });
+          // Spread time across the last 24 hours randomly
+          const randomPastMs = Math.floor(Math.random() * 24 * 60 * 60 * 1000);
+          const reportDate = new Date(Date.now() - randomPastMs).toISOString();
 
-          if (res && !res.corroborated && res.id) {
-            activeReports.push({
-              id: res.id,
+          promises.push(
+            createReport({
               type,
               sectorId,
               sectorName,
-              latitude: lat,
-              longitude: lng
-            } as any);
-          }
+              latitude: Number(lat.toFixed(6)),
+              longitude: Number(lng.toFixed(6)),
+              weight: Number((Math.random() * 8 + 1).toFixed(1)),
+              confidence: Math.floor(Math.random() * 90) + 10,
+              vehicleRef: mockUUID,
+              reportDate
+            })
+          );
         }
+        
+        await Promise.all(promises);
       }
       else if (testScenario === "degradation") {
         // Create an initial pothole, then have 3 vehicles report it with increasing weight
