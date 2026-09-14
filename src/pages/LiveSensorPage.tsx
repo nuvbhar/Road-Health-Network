@@ -156,34 +156,36 @@ export const LiveSensorPage: React.FC = () => {
             />
             {permissions && (
               <div style={{ 
-                fontSize: "0.85rem", 
+                fontSize: "0.9rem", 
                 display: "flex", 
                 flexDirection: "column", 
                 gap: "var(--space-2)", 
                 width: "100%", 
-                maxWidth: "240px",
-                padding: "var(--space-3)",
-                backgroundColor: "var(--bg-header-accent)",
-                border: "1px dashed var(--colour-warning)",
-                borderRadius: "var(--radius-md)",
-                fontFamily: "monospace"
+                padding: "var(--space-4)",
+                backgroundColor: "var(--bg-inset)",
+                border: "1px solid var(--border-default)",
+                borderRadius: "var(--radius-md)"
               }}>
                 {(['accelerometer', 'gyroscope', 'gps'] as const).map(sensor => {
                   const state = permissions[sensor];
+                  
                   if (state === "idle") {
                     return <div key={sensor} style={{ color: "var(--text-muted)", fontStyle: "italic" }}>{sensor} waiting...</div>;
                   }
+                  
                   if (state === "detecting") {
                     return <div key={sensor} style={{ color: "var(--colour-warning)", fontStyle: "italic" }}>{sensor} detecting...</div>;
                   }
+                  
                   if (state === "granted") {
-                    return <div key={sensor} style={{ color: "var(--colour-warning)" }}>{sensor} connected</div>;
+                    return <div key={sensor} style={{ color: "var(--colour-warning)", fontStyle: "italic" }}>{sensor} connected</div>;
                   }
+                  
                   const failReason = state === "denied" ? "permission not given" : "device not compatible";
                   return (
-                    <div key={sensor}>
+                    <div key={sensor} style={{ fontStyle: "italic" }}>
                       <span style={{ color: "var(--colour-warning)" }}>{sensor} </span>
-                      <span style={{ color: "var(--colour-danger)", fontWeight: "bold" }}>failed</span>
+                      <span style={{ color: "var(--colour-danger)", fontStyle: "normal", fontWeight: "bold" }}>failed</span>
                       <span style={{ color: "var(--colour-warning)" }}> - {failReason}</span>
                     </div>
                   );

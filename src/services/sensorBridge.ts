@@ -16,14 +16,33 @@ export async function requestMotionAccess(): Promise<AccessResult> {
   if (typeof (window as any).DeviceMotionEvent.requestPermission === "function") {
     try {
       const permissionState = await (window as any).DeviceMotionEvent.requestPermission();
-      return permissionState === "granted" ? "granted" : "denied";
+      if (permissionState !== "granted") return "denied";
     } catch (err) {
       console.error(err);
       return "denied";
     }
   }
   
-  return "granted";
+  // Actively verify if hardware actually sends data (blocks desktop false-positives)
+  return new Promise<AccessResult>((resolve) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+    
+    const listener = (e: DeviceMotionEvent) => {
+      const acc = e.accelerationIncludingGravity || e.acceleration;
+      if (acc && (acc.x !== null || acc.y !== null || acc.z !== null)) {
+        window.removeEventListener("devicemotion", listener);
+        clearTimeout(timeoutId);
+        resolve("granted");
+      }
+    };
+
+    window.addEventListener("devicemotion", listener);
+
+    timeoutId = setTimeout(() => {
+      window.removeEventListener("devicemotion", listener);
+      resolve("not_supported"); // No data received, hardware missing
+    }, 1000);
+  });
 }
 
 export async function requestGpsAccess(): Promise<AccessResult> {

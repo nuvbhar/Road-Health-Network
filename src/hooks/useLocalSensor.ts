@@ -65,40 +65,18 @@ export function useLocalSensor(setActiveDevice: (device: string | null) => void,
       return;
     }
 
-    if (typeof window.DeviceMotionEvent === "undefined") {
-      setLocalState("unsupported");
-      return;
-    }
-
-    let timeoutId: ReturnType<typeof setTimeout>;
+    setLocalState("streaming");
+    setLocalActive(true);
+    setActiveDevice("This Device (Local)");
     
-    const testListener = (e: DeviceMotionEvent) => {
-      const acc = e.accelerationIncludingGravity || e.acceleration;
-      if (acc && (acc.x !== null || acc.y !== null || acc.z !== null)) {
-        window.removeEventListener("devicemotion", testListener);
-        clearTimeout(timeoutId);
-        
-        setLocalState("streaming");
-        setLocalActive(true);
-        setActiveDevice("This Device (Local)");
-        
-        stopStreamRef.current = startSensorStream((r) => {
-          useAppStore.getState().setSensorReading(r);
-          processSensorReading(
-            r,
-            useAppStore.getState().enqueueSensorEvent,
-            useAppStore.getState().setEngineMetrics,
-          );
-        });
-      }
-    };
-
-    window.addEventListener("devicemotion", testListener);
-
-    timeoutId = setTimeout(() => {
-      window.removeEventListener("devicemotion", testListener);
-      setLocalState("unsupported");
-    }, 1500);
+    stopStreamRef.current = startSensorStream((r) => {
+      useAppStore.getState().setSensorReading(r);
+      processSensorReading(
+        r,
+        useAppStore.getState().enqueueSensorEvent,
+        useAppStore.getState().setEngineMetrics,
+      );
+    });
 
   }, [localState, setActiveDevice, setLocalActive]);
 
