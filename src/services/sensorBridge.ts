@@ -6,44 +6,45 @@ export interface PermissionsStatus {
   gps: boolean;
 }
 
-export async function requestMotionAccess(): Promise<boolean> {
+export type AccessResult = "granted" | "not_supported" | "denied";
+
+export async function requestMotionAccess(): Promise<AccessResult> {
   if (typeof (window as any).DeviceMotionEvent === "undefined") {
-    return false; // No motion sensor support (e.g., desktop)
+    return "not_supported"; 
   }
 
   if (typeof (window as any).DeviceMotionEvent.requestPermission === "function") {
     try {
       const permissionState = await (window as any).DeviceMotionEvent.requestPermission();
-      return permissionState === "granted";
+      return permissionState === "granted" ? "granted" : "denied";
     } catch (err) {
       console.error(err);
-      return false;
+      return "denied";
     }
   }
   
-  // Non-iOS 13+ mobile devices
-  return true;
+  return "granted";
 }
 
-export async function requestGpsAccess(): Promise<boolean> {
+export async function requestGpsAccess(): Promise<AccessResult> {
   if ("geolocation" in navigator) {
     try {
-      return await new Promise<boolean>((resolve) => {
+      return await new Promise<AccessResult>((resolve) => {
         navigator.geolocation.getCurrentPosition(
-          () => resolve(true),
+          () => resolve("granted"),
           (err) => {
             console.warn("GPS request failed or denied", err);
-            resolve(false);
+            resolve(err.code === err.PERMISSION_DENIED ? "denied" : "not_supported");
           },
           { enableHighAccuracy: true, timeout: 5000 }
         );
       });
     } catch (e) {
       console.error(e);
-      return false;
+      return "denied";
     }
   }
-  return false;
+  return "not_supported";
 }
 
 export async function requestSensorAccess(): Promise<PermissionsStatus> {
@@ -51,9 +52,9 @@ export async function requestSensorAccess(): Promise<PermissionsStatus> {
   const gpsGranted = await requestGpsAccess();
 
   return {
-    accelerometer: motionGranted,
-    gyroscope: motionGranted,
-    gps: gpsGranted,
+    accelerometer: motionGranted === "granted",
+    gyroscope: motionGranted === "granted",
+    gps: gpsGranted === "granted",
   };
 }
 

@@ -163,31 +163,31 @@ export const LiveSensorPage: React.FC = () => {
                 width: "100%", 
                 maxWidth: "240px",
                 padding: "var(--space-3)",
-                backgroundColor: "var(--bg-inset)",
-                border: "1px dashed var(--border-default)",
-                borderRadius: "var(--radius-md)"
+                backgroundColor: "var(--bg-header-accent)",
+                border: "1px dashed var(--colour-warning)",
+                borderRadius: "var(--radius-md)",
+                fontFamily: "monospace"
               }}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ color: "var(--text-secondary)" }}>Accelerometer</span>
-                  {permissions.accelerometer === "idle" && <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>waiting...</span>}
-                  {permissions.accelerometer === "detecting" && <span style={{ color: "var(--colour-warning)", fontStyle: "italic" }}>detecting...</span>}
-                  {permissions.accelerometer === "failed" && <span style={{ color: "var(--colour-danger)", fontStyle: "italic", fontWeight: 600 }}>failed</span>}
-                  {permissions.accelerometer === "granted" && <span>✅</span>}
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ color: "var(--text-secondary)" }}>Gyroscope</span>
-                  {permissions.gyroscope === "idle" && <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>waiting...</span>}
-                  {permissions.gyroscope === "detecting" && <span style={{ color: "var(--colour-warning)", fontStyle: "italic" }}>detecting...</span>}
-                  {permissions.gyroscope === "failed" && <span style={{ color: "var(--colour-danger)", fontStyle: "italic", fontWeight: 600 }}>failed</span>}
-                  {permissions.gyroscope === "granted" && <span>✅</span>}
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ color: "var(--text-secondary)" }}>Location (GPS)</span>
-                  {permissions.gps === "idle" && <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>waiting...</span>}
-                  {permissions.gps === "detecting" && <span style={{ color: "var(--colour-warning)", fontStyle: "italic" }}>detecting...</span>}
-                  {permissions.gps === "failed" && <span style={{ color: "var(--colour-danger)", fontStyle: "italic", fontWeight: 600 }}>failed</span>}
-                  {permissions.gps === "granted" && <span>✅</span>}
-                </div>
+                {(['accelerometer', 'gyroscope', 'gps'] as const).map(sensor => {
+                  const state = permissions[sensor];
+                  if (state === "idle") {
+                    return <div key={sensor} style={{ color: "var(--text-muted)", fontStyle: "italic" }}>{sensor} waiting...</div>;
+                  }
+                  if (state === "detecting") {
+                    return <div key={sensor} style={{ color: "var(--colour-warning)", fontStyle: "italic" }}>{sensor} detecting...</div>;
+                  }
+                  if (state === "granted") {
+                    return <div key={sensor} style={{ color: "var(--colour-warning)" }}>{sensor} connected</div>;
+                  }
+                  const failReason = state === "denied" ? "permission not given" : "device not compatible";
+                  return (
+                    <div key={sensor}>
+                      <span style={{ color: "var(--colour-warning)" }}>{sensor} </span>
+                      <span style={{ color: "var(--colour-danger)", fontWeight: "bold" }}>failed</span>
+                      <span style={{ color: "var(--colour-warning)" }}> - {failReason}</span>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

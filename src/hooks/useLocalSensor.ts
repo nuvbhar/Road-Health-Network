@@ -3,7 +3,7 @@ import { requestMotionAccess, requestGpsAccess, startSensorStream } from "../ser
 import { useAppStore } from "../store/useAppStore";
 import { processSensorReading } from "../services/detectionEngine";
 
-export type SensorCheckState = "idle" | "detecting" | "granted" | "failed";
+export type SensorCheckState = "idle" | "detecting" | "granted" | "not_supported" | "denied";
 
 export interface SensorCheckStatus {
   accelerometer: SensorCheckState;
@@ -41,26 +41,26 @@ export function useLocalSensor(setActiveDevice: (device: string | null) => void,
       gps: "idle",
     });
 
-    const motionGranted = await requestMotionAccess();
+    const motionResult = await requestMotionAccess();
     setPermissions(prev => ({
       ...prev!,
-      accelerometer: motionGranted ? "granted" : "failed",
-      gyroscope: motionGranted ? "granted" : "failed",
-      gps: motionGranted ? "detecting" : "idle",
+      accelerometer: motionResult,
+      gyroscope: motionResult,
+      gps: motionResult === "granted" ? "detecting" : "idle",
     }));
 
-    if (!motionGranted) {
+    if (motionResult !== "granted") {
       setLocalState("unsupported");
       return;
     }
 
-    const gpsGranted = await requestGpsAccess();
+    const gpsResult = await requestGpsAccess();
     setPermissions(prev => ({
       ...prev!,
-      gps: gpsGranted ? "granted" : "failed",
+      gps: gpsResult,
     }));
 
-    if (!gpsGranted) {
+    if (gpsResult !== "granted") {
       setLocalState("unsupported");
       return;
     }
