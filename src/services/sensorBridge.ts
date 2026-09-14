@@ -1,26 +1,56 @@
 import { SensorReading } from "../store/types";
 
-export function requestSensorAccess(): Promise<boolean> {
-  return new Promise((resolve) => {
-    if (
-      typeof (DeviceMotionEvent as any) !== "undefined" &&
-      typeof (DeviceMotionEvent as any).requestPermission === "function"
-    ) {
-      (DeviceMotionEvent as any)
-        .requestPermission()
-        .then((permissionState: string) => {
-          if (permissionState === "granted") {
-            resolve(true);
-          } else {
-            resolve(false);
-          }
-        })
-        .catch(console.error);
-    } else {
-      // Non-iOS 13+ devices
-      resolve(true);
+export interface PermissionsStatus {
+  accelerometer: boolean;
+  gyroscope: boolean;
+  gps: boolean;
+}
+
+export async function requestSensorAccess(): Promise<PermissionsStatus> {
+  const status: PermissionsStatus = {
+    accelerometer: false,
+    gyroscope: false,
+    gps: false,
+  };
+
+  if (
+    typeof (DeviceMotionEvent as any) !== "undefined" &&
+    typeof (DeviceMotionEvent as any).requestPermission === "function"
+  ) {
+    try {
+      const permissionState = await (DeviceMotionEvent as any).requestPermission();
+      if (permissionState === "granted") {
+        status.accelerometer = true;
+        status.gyroscope = true;
+      }
+    } catch (err) {
+      console.error(err);
     }
-  });
+  } else {
+    // Non-iOS 13+ generally do not require explicit prompt for motion
+    status.accelerometer = true;
+    status.gyroscope = true;
+  }
+
+  if ("geolocation" in navigator) {
+    try {
+      const gpsGranted = await new Promise<boolean>((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          () => resolve(true),
+          (err) => {
+            console.warn("GPS request failed or denied", err);
+            resolve(false);
+          },
+          { enableHighAccuracy: true, timeout: 5000 }
+        );
+      });
+      status.gps = gpsGranted;
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  return status;
 }
 
 export function startSensorStream(

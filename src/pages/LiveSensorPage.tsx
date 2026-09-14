@@ -25,7 +25,7 @@ export const LiveSensorPage: React.FC = () => {
   }, [reading, activeDevice, localActive]);
 
   const { peerId, disconnectMobile } = useWebRTCBridge(setActiveDevice);
-  const { localState, handleLocalToggle } = useLocalSensor(setActiveDevice, setLocalActive);
+  const { localState, handleLocalToggle, permissions } = useLocalSensor(setActiveDevice, setLocalActive);
 
   return (
     <div
@@ -142,16 +142,34 @@ export const LiveSensorPage: React.FC = () => {
             style={{
               flex: 1,
               display: "flex",
+              flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
               minHeight: "120px",
+              gap: "var(--space-4)"
             }}
           >
             <SmartphoneIcon
-              width={80}
-              height={80}
+              width={64}
+              height={64}
               style={{ color: "var(--border-default)", opacity: 0.5 }}
             />
+            {permissions && (
+              <div style={{ fontSize: "0.85rem", display: "flex", flexDirection: "column", gap: "var(--space-2)", width: "100%", maxWidth: "200px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "var(--text-secondary)" }}>Accelerometer</span>
+                  <span>{permissions.accelerometer ? "✅" : "❌"}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "var(--text-secondary)" }}>Gyroscope</span>
+                  <span>{permissions.gyroscope ? "✅" : "❌"}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "var(--text-secondary)" }}>Location (GPS)</span>
+                  <span>{permissions.gps ? "✅" : "❌"}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           <Button
@@ -242,7 +260,7 @@ export const LiveSensorPage: React.FC = () => {
             <MetricRow
               label="Latitude"
               value={
-                reading?.gps?.latitude ? reading.gps.latitude.toFixed(5) : "---"
+                reading?.gps?.latitude ? reading.gps.latitude.toFixed(5) : "N/A"
               }
             />
             <MetricRow
@@ -250,7 +268,7 @@ export const LiveSensorPage: React.FC = () => {
               value={
                 reading?.gps?.longitude
                   ? reading.gps.longitude.toFixed(5)
-                  : "---"
+                  : "N/A"
               }
             />
             <MetricRow
@@ -259,7 +277,7 @@ export const LiveSensorPage: React.FC = () => {
                 reading?.gps?.speed !== undefined &&
                 reading?.gps?.speed !== null
                   ? `${(reading.gps.speed * 3.6).toFixed(1)} km/h`
-                  : "---"
+                  : "N/A"
               }
             />
           </div>
@@ -286,7 +304,7 @@ export const LiveSensorPage: React.FC = () => {
               value={
                 reading?.gyroscope?.x !== undefined
                   ? `${reading.gyroscope.x.toFixed(2)}°`
-                  : "---"
+                  : "N/A"
               }
             />
             <MetricRow
@@ -294,7 +312,7 @@ export const LiveSensorPage: React.FC = () => {
               value={
                 reading?.gyroscope?.y !== undefined
                   ? `${reading.gyroscope.y.toFixed(2)}°`
-                  : "---"
+                  : "N/A"
               }
             />
             <MetricRow
@@ -302,7 +320,7 @@ export const LiveSensorPage: React.FC = () => {
               value={
                 reading?.gyroscope?.z !== undefined
                   ? `${reading.gyroscope.z.toFixed(2)}°`
-                  : "---"
+                  : "N/A"
               }
             />
           </div>

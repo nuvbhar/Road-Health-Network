@@ -2,9 +2,11 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { requestSensorAccess, startSensorStream } from "../services/sensorBridge";
 import { useAppStore } from "../store/useAppStore";
 import { processSensorReading } from "../services/detectionEngine";
+import { PermissionsStatus } from "../services/sensorBridge";
 
 export function useLocalSensor(setActiveDevice: (device: string | null) => void, setLocalActive: (active: boolean) => void) {
   const [localState, setLocalState] = useState<"idle" | "scanning" | "streaming" | "unsupported">("idle");
+  const [permissions, setPermissions] = useState<PermissionsStatus | null>(null);
   const stopStreamRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
@@ -20,13 +22,16 @@ export function useLocalSensor(setActiveDevice: (device: string | null) => void,
       setLocalState("idle");
       setActiveDevice(null);
       setLocalActive(false);
+      setPermissions(null);
       useAppStore.getState().setSensorReading(null);
       return;
     }
 
     setLocalState("scanning");
-    const granted = await requestSensorAccess();
-    if (!granted) {
+    const status = await requestSensorAccess();
+    setPermissions(status);
+
+    if (!status.accelerometer) {
       setLocalState("unsupported");
       return;
     }
@@ -68,5 +73,5 @@ export function useLocalSensor(setActiveDevice: (device: string | null) => void,
 
   }, [localState, setActiveDevice, setLocalActive]);
 
-  return { localState, handleLocalToggle };
+  return { localState, handleLocalToggle, permissions };
 }

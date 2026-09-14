@@ -256,13 +256,13 @@ export const useAppStore = create<AppState>((set, get) => ({
             sectorId: "SEC-B",
             sectorName: "Kharar-CU Sector B",
             roadReference: "Live Demo Route",
-            latitude: event.latitude || 30.748 + Math.random() * 0.005,
-            longitude: event.longitude || 76.645 + Math.random() * 0.005,
+            latitude: event.latitude ?? (30.748 + Math.random() * 0.005),
+            longitude: event.longitude ?? (76.645 + Math.random() * 0.005),
             status: "pending",
             independentReports: 1,
             reportingVehicles: [{ id: uuid }],
-            speed: event.speed,
-            gyroscope: event.gyroscope,
+            speed: event.speed ?? 0,
+            gyroscope: event.gyroscope ?? { x: 0, y: 0, z: 0 },
             waveformData: event.waveformData,
           } as any).catch((e) => console.warn("Failed to push to DB:", e));
 
