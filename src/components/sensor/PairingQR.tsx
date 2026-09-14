@@ -9,9 +9,11 @@ export const PairingQR: React.FC<PairingQRProps> = ({ peerId }) => {
   const [url, setUrl] = useState("");
 
   useEffect(() => {
-    // Generate the correct URL for BrowserRouter with basename /Road-Health-Network/
+    // Generate the correct URL depending on whether we are using HashRouter or base paths
     const origin = window.location.origin;
-    const target = `${origin}/Road-Health-Network/sensor`;
+    const pathname = window.location.pathname;
+    // Point to the #/sensor route with the peerId
+    const target = `${origin}${pathname}#/sensor`;
     setUrl(peerId ? `${target}?peer=${peerId}` : target);
   }, [peerId]);
 
