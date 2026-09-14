@@ -39,8 +39,64 @@ npm run dev
 ## 🛠 Tech Stack
 
 - **Frontend**: React 18, Vite, TypeScript, Zustand (State Management), React-Leaflet
-- **Backend**: Node.js, Express, `ws` (WebSockets), `better-sqlite3`
+- **Backend**: Node.js, Express, `ws` (WebSockets), Supabase (PostgreSQL)
 - **Map Tiles**: OpenStreetMap
+
+## 🗄️ Database Schema
+
+The application uses Supabase (PostgreSQL) for persistence. The database schema is visualized below:
+
+```mermaid
+erDiagram
+    sectors ||--o{ reports : "has many"
+    sectors ||--o{ vehicles : "has many"
+    reports ||--o{ report_vehicles : "reported by"
+
+    sectors {
+        string id PK
+        string name
+        string displayName
+        string status
+        int reportCount
+        float confidence
+        float startLat
+        float startLng
+        float endLat
+        float endLng
+        string lastReportAt
+    }
+
+    reports {
+        string id PK
+        string reportDate
+        string sectorId FK
+        string sectorName
+        string roadReference
+        string type
+        float confidence
+        float weight
+        string source
+        string vehicleRef
+        int rawDataShared
+        string status
+        float latitude
+        float longitude
+        int independentReports
+    }
+
+    report_vehicles {
+        string reportId FK
+        string vehicleRef PK
+    }
+
+    vehicles {
+        string id PK
+        string sectorId FK
+        string status
+        int reportsToday
+        string lastSeenAt
+    }
+```
 
 ## 📋 Project Status
 This project was developed iteratively through specialized phases (Privacy Model Overhaul, Backend/Datastore, Interactive Mapping, Auto-Corroboration, Live Streaming, and Fleet Analytics) and is ready for broader pilot deployments.
