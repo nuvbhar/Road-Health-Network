@@ -148,7 +148,7 @@ export const ReportMarkerLayer: React.FC<ReportMarkerLayerProps> = ({
                                 fontFamily: "monospace",
                               }}
                             >
-                              {v.id ? v.id.substring(0, 5) : typeof v === 'string' ? v.substring(0, 5) : ''}
+                              {v.id ? v.id.substring(0, 5) : typeof v === 'string' ? String(v).substring(0, 5) : ''}
                             </span>
                           ))}
                         </div>
