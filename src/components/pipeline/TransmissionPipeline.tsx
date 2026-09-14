@@ -214,11 +214,11 @@ export const TransmissionPipeline: React.FC = () => {
             backgroundColor: "var(--bg-surface)",
             borderRadius: "var(--radius-lg)",
             width: "100%",
-            maxWidth: "500px",
+            maxWidth: "600px",
             maxHeight: "80vh",
             display: "flex",
             flexDirection: "column",
-            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
             border: "1px solid var(--border-light)",
             overflow: "hidden"
           }} onClick={(e) => e.stopPropagation()}>
@@ -236,114 +236,90 @@ export const TransmissionPipeline: React.FC = () => {
               </h3>
               <button 
                 onClick={() => setIsQueueModalOpen(false)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "var(--text-muted)",
-                  padding: "4px",
-                  display: "flex"
-                }}
+                className={styles.dismissBtn}
               >
                 <XIcon />
               </button>
             </div>
             
             <div style={{
-              padding: "var(--space-6)",
+              padding: "var(--space-4)",
               overflowY: "auto",
               flex: 1,
               display: "flex",
               flexDirection: "column",
-              gap: "var(--space-3)"
+              gap: "8px"
             }}>
               {queue.length === 0 ? (
                 <div style={{ textAlign: "center", color: "var(--text-muted)", padding: "var(--space-8) 0" }}>
                   Queue is currently empty
                 </div>
               ) : (
-                // Sort by confidence highest to lowest for triage priority
                 [...queue].sort((a, b) => b.confidence - a.confidence).map((q, i) => {
-                  const isHigh = q.confidence > 75;
-                  const isMed = q.confidence > 45 && !isHigh;
+                  const isHigh = q.confidence >= 85;
+                  const isMed = q.confidence >= 60 && !isHigh;
                   
-                  const severityColor = isHigh ? "var(--colour-danger)" : isMed ? "var(--colour-warning)" : "var(--colour-ok)";
-                  const severityBg = isHigh ? "rgba(220, 38, 38, 0.1)" : isMed ? "rgba(217, 119, 6, 0.1)" : "rgba(22, 163, 74, 0.1)";
+                  const severityColor = isHigh ? "#dc2626" : isMed ? "#f97316" : "#f59e0b";
 
                   return (
                     <div key={i} style={{
-                      backgroundColor: "var(--bg-inset)",
-                      borderRadius: "var(--radius-md)",
-                      padding: "var(--space-3) var(--space-4)",
-                      border: "1px solid var(--border-light)",
-                      borderLeft: `4px solid ${severityColor}`,
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "var(--space-2)",
-                      position: "relative"
+                      backgroundColor: "#f7f8fa",
+                      borderRadius: "6px",
+                      padding: "10px 14px",
+                      border: "1px solid #e2e5ea",
+                      borderLeft: `3px solid ${severityColor}`,
+                      display: "grid",
+                      gridTemplateColumns: "20px 1fr 90px 70px 20px",
+                      alignItems: "center",
+                      gap: "12px"
                     }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
-                          <AlertTriangleIcon width={14} height={14} color={severityColor} />
-                          <span style={{ fontWeight: 600, color: "var(--text-primary)", fontSize: "0.9rem" }}>
-                            {q.type?.replace(/POTENTIAL_/g, "")?.replace(/_/g, " ") || "ANOMALY"}
-                          </span>
-                        </div>
-                        
-                        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
-                          <span style={{ 
-                            color: severityColor, 
-                            backgroundColor: severityBg,
-                            padding: "2px 6px",
-                            borderRadius: "4px",
-                            fontFamily: "monospace", 
-                            fontWeight: 700,
-                            fontSize: "0.85rem"
-                          }}>
-                            {q.confidence}%
-                          </span>
-                          <button 
-                            onClick={() => useAppStore.getState().removeSensorEventFromQueue(queue.indexOf(q))}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              color: "var(--text-muted)",
-                              cursor: "pointer",
-                              padding: "4px",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              borderRadius: "4px"
-                            }}
-                            title="Dismiss from queue"
-                          >
-                            <XIcon width={14} height={14} />
-                          </button>
+                      <div style={{ display: "flex", justifyContent: "center" }}>
+                        <AlertTriangleIcon width={16} height={16} color={severityColor} />
+                      </div>
+                      
+                      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                        <span style={{ fontWeight: 600, fontSize: "14px", color: "#1e293b" }}>
+                          {q.type?.replace(/POTENTIAL_/g, "")?.replace(/_/g, " ") || "ANOMALY"}
+                        </span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "4px", fontFamily: "monospace", fontSize: "12px", color: "#64748b" }}>
+                          <MapIcon width={10} height={10} />
+                          {q.latitude?.toFixed(5) || "---"}, {q.longitude?.toFixed(5) || "---"}
                         </div>
                       </div>
                       
+                      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                        <span style={{ 
+                          color: severityColor, 
+                          backgroundColor: `${severityColor}1A`,
+                          width: "48px",
+                          textAlign: "center",
+                          padding: "2px 0",
+                          borderRadius: "4px",
+                          fontFamily: "monospace", 
+                          fontWeight: 600,
+                          fontSize: "12px"
+                        }}>
+                          {q.confidence}%
+                        </span>
+                      </div>
+                      
                       <div style={{ 
-                        display: "flex", 
-                        alignItems: "center", 
-                        justifyContent: "space-between",
-                        fontSize: "0.8rem", 
-                        color: "var(--text-secondary)" 
+                        textAlign: "right",
+                        fontSize: "12px",
+                        color: "#64748b",
+                        fontVariantNumeric: "tabular-nums"
                       }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
-                          <MapIcon width={12} height={12} />
-                          <span style={{ fontFamily: "monospace" }}>
-                            {q.latitude?.toFixed(5) || "---"}, {q.longitude?.toFixed(5) || "---"}
-                          </span>
-                        </div>
-                        
-                        <div style={{ display: "flex", gap: "var(--space-4)", fontFamily: "monospace" }}>
-                          <span>
-                            {q.speed !== undefined && q.speed !== null ? `${(q.speed * 3.6).toFixed(1)} km/h` : "N/A"}
-                          </span>
-                          <span>
-                            {q.timestamp ? new Date(q.timestamp).toLocaleTimeString() : "N/A"}
-                          </span>
-                        </div>
+                        {q.timestamp ? new Date(q.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ""}
+                      </div>
+                      
+                      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                        <button 
+                          onClick={() => useAppStore.getState().removeSensorEventFromQueue(queue.indexOf(q))}
+                          className={styles.dismissBtn}
+                          title="Dismiss from queue"
+                        >
+                          <XIcon width={16} height={16} />
+                        </button>
                       </div>
                     </div>
                   );
