@@ -74,16 +74,24 @@ export const MobileSensorPage: React.FC = () => {
 
         // Post to backend
         try {
-          const { getCurrentPosition } =
-            await import("../services/geolocation");
-          const coords = await getCurrentPosition();
+          let lat = event.latitude;
+          let lng = event.longitude;
+
+          // Fallback if sensor stream didn't have a GPS lock yet
+          if (lat === undefined || lng === undefined) {
+            const { getCurrentPosition } =
+              await import("../services/geolocation");
+            const coords = await getCurrentPosition();
+            lat = coords.latitude;
+            lng = coords.longitude;
+          }
 
           const { createReport } = await import("../services/api");
           await createReport({
             type: event.type as any,
             confidence: event.confidence,
-            latitude: coords.latitude,
-            longitude: coords.longitude,
+            latitude: lat,
+            longitude: lng,
             vehicleRef: "V-MOBILE-NODE",
           });
         } catch (err) {

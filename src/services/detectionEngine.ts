@@ -39,7 +39,7 @@ async function classifyEvent(
   peakToPeak: number,
   windowSnr: number,
   reading: SensorReading,
-  onEvent: (event: RoadEvent) => void
+  onEvent: (event: RoadEvent) => void,
 ) {
   let type: string;
   let aiConfidenceBonus = 0;
@@ -58,25 +58,37 @@ async function classifyEvent(
     const pNoise = probs[1];
 
     if (pNoise > 0.6) {
-      console.debug(`[Engine] AI classified event as noise (prob: ${pNoise.toFixed(2)}). Emitting anyway for debug.`);
+      console.debug(
+        `[Engine] AI classified event as noise (prob: ${pNoise.toFixed(2)}). Emitting anyway for debug.`,
+      );
     }
 
     type = peakToPeak > 3.5 ? "SEVERE_POTHOLE" : "POTENTIAL_POTHOLE";
 
     aiConfidenceBonus = Math.floor(pPothole * 10) - 5;
-    console.debug(`[Engine] AI Classification: ${type} (Confidence: ${pPothole.toFixed(2)})`);
+    console.debug(
+      `[Engine] AI Classification: ${type} (Confidence: ${pPothole.toFixed(2)})`,
+    );
   } else {
     // --- STAGE 1.5: HEURISTIC FALLBACK ---
-    let minZ = Infinity, maxZ = -Infinity;
-    let idxMin = 0, idxMax = 0;
-    
+    let minZ = Infinity,
+      maxZ = -Infinity;
+    let idxMin = 0,
+      idxMax = 0;
+
     sequence.forEach((z, idx) => {
-      if (z < minZ) { minZ = z; idxMin = idx; }
-      if (z > maxZ) { maxZ = z; idxMax = idx; }
+      if (z < minZ) {
+        minZ = z;
+        idxMin = idx;
+      }
+      if (z > maxZ) {
+        maxZ = z;
+        idxMax = idx;
+      }
     });
 
     const isPotholeSequence = idxMin < idxMax;
-    
+
     if (isPotholeSequence) {
       type = peakToPeak > 3.5 ? "SEVERE_POTHOLE" : "POTENTIAL_POTHOLE";
     } else {
@@ -112,6 +124,8 @@ async function classifyEvent(
   });
 }
 
+let cooldownFrames = 0;
+
 export function processSensorReading(
   reading: SensorReading,
   onEvent: (event: RoadEvent) => void,
@@ -125,7 +139,9 @@ export function processSensorReading(
   if (zBuffer.length < WINDOW_SIZE) return;
 
   const meanZ = zBuffer.reduce((sum, val) => sum + val, 0) / zBuffer.length;
-  const variance = zBuffer.reduce((sum, val) => sum + Math.pow(val - meanZ, 2), 0) / zBuffer.length;
+  const variance =
+    zBuffer.reduce((sum, val) => sum + Math.pow(val - meanZ, 2), 0) /
+    zBuffer.length;
   const stdDev = Math.sqrt(variance);
 
   const zForce = Math.abs(rawZ - meanZ);
@@ -140,6 +156,14 @@ export function processSensorReading(
     onMetrics({ rawZ, meanZ, stdDev, zForce, snr, threshold: 3.0 });
   }
 
+  if (engineState === "COOLDOWN") {
+    if (cooldownFrames > 0) {
+      cooldownFrames--;
+    } else {
+      engineState = "IDLE";
+    }
+  }
+
   if (engineState === "IDLE") {
     if (zForce > dynamicThreshold && snr > 1.5) {
       engineState = "CAPTURING";
@@ -151,23 +175,25 @@ export function processSensorReading(
     captureBuffer.push(rawZ);
 
     if (captureBuffer.length >= 5 + CAPTURE_FRAMES) {
-      let minZ = Infinity, maxZ = -Infinity;
-      captureBuffer.forEach((z) => {
-        if (z < minZ) minZ = z;
-        if (z > maxZ) maxZ = z;
-      });
+      const minZ = Math.min(...captureBuffer);
+      const maxZ = Math.max(...captureBuffer);
 
       const peakToPeak = maxZ - minZ;
-      const maxDeviation = Math.max(Math.abs(maxZ - triggerMean), Math.abs(minZ - triggerMean));
+      const maxDeviation = Math.max(
+        Math.abs(maxZ - triggerMean),
+        Math.abs(minZ - triggerMean),
+      );
       const windowSnr = maxDeviation / (triggerStdDev + VARIANCE_SMOOTHING);
 
-      const sequence = captureBuffer.map(z => z - triggerMean);
+      const sequence = captureBuffer.map((z) => z - triggerMean);
 
       engineState = "COOLDOWN";
-      setTimeout(() => { engineState = "IDLE"; }, 2000);
+      cooldownFrames = 60; // 2 seconds at 30Hz
 
       // Fire and forget inference
-      classifyEvent(sequence, peakToPeak, windowSnr, reading, onEvent).catch(console.error);
+      classifyEvent(sequence, peakToPeak, windowSnr, reading, onEvent).catch(
+        console.error,
+      );
     }
   }
 }

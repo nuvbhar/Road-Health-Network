@@ -279,6 +279,130 @@ export const LiveSensorPage: React.FC = () => {
 
       <SensorCanvas />
 
+      {/* Live Device Telemetry Section */}
+      <div
+        style={{
+          backgroundColor: "var(--bg-surface)",
+          border: "1px solid var(--border-light)",
+          borderRadius: "var(--radius-lg)",
+          boxShadow:
+            "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.05)",
+          overflow: "hidden",
+          marginTop: "var(--space-2)",
+        }}
+      >
+        <div
+          style={{
+            padding: "var(--space-4) var(--space-6)",
+            borderBottom: "1px solid var(--border-light)",
+            backgroundColor: "var(--bg-elevated)",
+          }}
+        >
+          <h3
+            style={{
+              fontSize: "1.1rem",
+              fontWeight: 600,
+              color: "var(--text-primary)",
+            }}
+          >
+            Live Device Sensors
+          </h3>
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "var(--space-4)",
+            padding: "var(--space-6)",
+          }}
+        >
+          {/* Location & Speed */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--space-3)",
+            }}
+          >
+            <h4
+              style={{
+                fontSize: "0.85rem",
+                textTransform: "uppercase",
+                color: "var(--text-secondary)",
+              }}
+            >
+              Location & Speed
+            </h4>
+            <MetricRow
+              label="Latitude"
+              value={
+                reading?.gps?.latitude ? reading.gps.latitude.toFixed(5) : "---"
+              }
+            />
+            <MetricRow
+              label="Longitude"
+              value={
+                reading?.gps?.longitude
+                  ? reading.gps.longitude.toFixed(5)
+                  : "---"
+              }
+            />
+            <MetricRow
+              label="Speed"
+              value={
+                reading?.gps?.speed !== undefined &&
+                reading?.gps?.speed !== null
+                  ? `${(reading.gps.speed * 3.6).toFixed(1)} km/h`
+                  : "---"
+              }
+            />
+          </div>
+
+          {/* Gyroscope */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "var(--space-3)",
+            }}
+          >
+            <h4
+              style={{
+                fontSize: "0.85rem",
+                textTransform: "uppercase",
+                color: "var(--text-secondary)",
+              }}
+            >
+              Gyroscope (Orientation)
+            </h4>
+            <MetricRow
+              label="Pitch (X)"
+              value={
+                reading?.gyroscope?.x !== undefined
+                  ? `${reading.gyroscope.x.toFixed(2)}°`
+                  : "---"
+              }
+            />
+            <MetricRow
+              label="Roll (Y)"
+              value={
+                reading?.gyroscope?.y !== undefined
+                  ? `${reading.gyroscope.y.toFixed(2)}°`
+                  : "---"
+              }
+            />
+            <MetricRow
+              label="Yaw (Z)"
+              value={
+                reading?.gyroscope?.z !== undefined
+                  ? `${reading.gyroscope.z.toFixed(2)}°`
+                  : "---"
+              }
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Analysis & Transmission Section */}
       <div
         style={{
