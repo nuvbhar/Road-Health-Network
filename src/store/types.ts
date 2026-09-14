@@ -36,6 +36,9 @@ export interface Report {
   // Extended telemetry
   speed?: number | null;
   gyroscope?: { pitch: number; roll: number; yaw: number } | null;
+  waveformData?: number[] | null;
+  correlationScore?: number | null;
+  isConfirmed?: boolean;
 }
 
 export interface Vehicle {
@@ -102,4 +105,5 @@ export interface RoadEvent {
     roll: number;
     yaw: number;
   };
+  waveformData?: number[];
 }

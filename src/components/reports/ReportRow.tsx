@@ -51,6 +51,26 @@ export const ReportRow: React.FC<ReportRowProps> = React.memo(
             >
               {typeInfo.label}
             </span>
+            {report.isConfirmed && (
+              <span
+                style={{
+                  marginLeft: "var(--space-2)",
+                  fontSize: "0.75rem",
+                  padding: "1px 6px",
+                  borderRadius: "10px",
+                  backgroundColor: "rgba(22, 163, 74, 0.12)",
+                  color: "var(--colour-ok)",
+                  fontWeight: 600,
+                }}
+                title={
+                  report.correlationScore !== null && report.correlationScore !== undefined
+                    ? `Cross-car confirmed (Pearson r=${report.correlationScore.toFixed(2)})`
+                    : "Cross-car confirmed"
+                }
+              >
+                ✓ Confirmed
+              </span>
+            )}
           </div>
           <div className={styles.reference}>
             {report.latitude.toFixed(5)}, {report.longitude.toFixed(5)}

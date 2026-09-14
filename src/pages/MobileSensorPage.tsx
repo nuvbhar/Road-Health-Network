@@ -87,15 +87,22 @@ export const MobileSensorPage: React.FC = () => {
           }
 
           const { createReport } = await import("../services/api");
+          let vRef = sessionStorage.getItem("rhn_vehicle_ref");
+          if (!vRef) {
+            vRef = "V-NODE-" + Math.random().toString(36).substring(2, 7).toUpperCase();
+            sessionStorage.setItem("rhn_vehicle_ref", vRef);
+          }
+
           await createReport({
             type: event.type as any,
             confidence: event.confidence,
             latitude: lat,
             longitude: lng,
-            vehicleRef: "V-MOBILE-NODE",
+            vehicleRef: vRef,
             speed: event.speed,
             gyroscope: event.gyroscope,
             weight: event.weight,
+            waveformData: event.waveformData,
             reportDate: new Date(event.timestamp || Date.now()).toISOString(),
           });
         } catch (err) {

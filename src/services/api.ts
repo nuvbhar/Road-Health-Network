@@ -6,6 +6,7 @@ import {
   TrendDataPoint,
 } from "../store/types";
 import { supabase } from "./supabaseClient";
+import { processSpatialConfirmation } from "./spatialConfirmation";
 
 export async function fetchStats(): Promise<AppStats> {
   const [
@@ -66,10 +67,26 @@ export async function fetchReports(
 
   return (reportsData || []).map((r: any) => {
     const vehicles = (r.report_vehicles || []).map((v: any) => v.vehicleRef);
+    let parsedWaveform: number[] | null = null;
+    if (r.waveformData) {
+      if (Array.isArray(r.waveformData)) {
+        parsedWaveform = r.waveformData;
+      } else if (typeof r.waveformData === "string") {
+        try {
+          parsedWaveform = JSON.parse(r.waveformData);
+        } catch {
+          parsedWaveform = null;
+        }
+      }
+    }
+
     const result: any = {
       ...r,
       rawDataShared: !!r.rawDataShared,
       reportingVehicles: vehicles,
+      waveformData: parsedWaveform,
+      correlationScore: r.correlationScore !== undefined ? r.correlationScore : null,
+      isConfirmed: Boolean(r.isConfirmed),
     };
     
     if (r.gyroPitch !== null && r.gyroPitch !== undefined) {
@@ -134,84 +151,87 @@ export async function updateReportStatus(
   if (error) throw error;
 }
 
-// Haversine distance in meters
-function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371e3; // metres
-  const φ1 = (lat1 * Math.PI) / 180; // φ, λ in radians
-  const φ2 = (lat2 * Math.PI) / 180;
-  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
-  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
-
-  const a =
-    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-  return R * c; // in metres
-}
-
 export async function createReport(
   data: Partial<Report>,
-): Promise<{ id: string; corroborated: boolean }> {
+): Promise<{ id: string; corroborated: boolean; isConfirmed: boolean }> {
   const lat = data.latitude || 0;
   const lon = data.longitude || 0;
-  const reportType = data.type || "ROAD_ANOMALY";
+  const reportType = data.type || "POTENTIAL_POTHOLE";
   const vehicleRef = data.vehicleRef || "User-UNKNOWN";
 
-  // 1. Check for nearby active reports of same type
-  const { data: activeReports } = await supabase
+  // 1. Fetch active reports to evaluate spatial confirmation across fleet vehicles
+  const { data: activeRows } = await supabase
     .from("reports")
-    .select("*")
+    .select("*, report_vehicles(vehicleRef)")
     .neq("status", "resolved")
     .eq("type", reportType);
 
-  let matchedReport: any = null;
-  for (const r of (activeReports || [])) {
-    if (r.latitude && r.longitude) {
-      const dist = getDistance(lat, lon, r.latitude, r.longitude);
-      if (dist <= 50) {
-        matchedReport = r;
-        break;
+  const activeReports: Report[] = (activeRows || []).map((r: any) => ({
+    ...r,
+    reportingVehicles: (r.report_vehicles || []).map((v: any) => v.vehicleRef),
+    waveformData: Array.isArray(r.waveformData)
+      ? r.waveformData
+      : typeof r.waveformData === "string"
+      ? JSON.parse(r.waveformData)
+      : null,
+    correlationScore: r.correlationScore ?? null,
+    isConfirmed: Boolean(r.isConfirmed),
+  }));
+
+  const confirmation = processSpatialConfirmation(data, activeReports);
+
+  if (confirmation.matchedReport) {
+    const matched = confirmation.matchedReport;
+
+    if (confirmation.isNewVehicle) {
+      await supabase
+        .from("report_vehicles")
+        .insert({ reportId: matched.id, vehicleRef });
+
+      const newIndependentCount = (matched.independentReports || 1) + 1;
+      const updatePayload: Record<string, any> = {
+        independentReports: newIndependentCount,
+        confidence: confirmation.updatedConfidence,
+      };
+
+      if (confirmation.correlationScore !== null) {
+        updatePayload.correlationScore = confirmation.correlationScore;
       }
-    }
-  }
 
-  if (matchedReport) {
-    // Check if this vehicle already reported this (to avoid spam)
-    const { data: existingVehicles } = await supabase
-      .from("report_vehicles")
-      .select("*")
-      .eq("reportId", matchedReport.id)
-      .eq("vehicleRef", vehicleRef);
-    
-    const existingVehicle = existingVehicles?.[0];
+      if (confirmation.isConfirmed) {
+        updatePayload.isConfirmed = true;
+        if (matched.status === "pending") {
+          updatePayload.status = "under_review";
+        }
+      }
 
-    if (!existingVehicle) {
-      await supabase.from("report_vehicles").insert({ reportId: matchedReport.id, vehicleRef });
-      
-      const newCount = matchedReport.independentReports + 1;
-      await supabase.from("reports").update({ independentReports: newCount }).eq("id", matchedReport.id);
-
-      const { data: updatedData } = await supabase
+      const { error: updateErr } = await supabase
         .from("reports")
-        .select("*")
-        .eq("id", matchedReport.id);
-      
-      const updated = updatedData?.[0] || matchedReport;
+        .update(updatePayload)
+        .eq("id", matched.id);
 
-      // Auto-escalation Logic
-      if (updated.independentReports >= 3 && updated.status === "pending") {
-        await supabase.from("reports").update({ status: "under_review" }).eq("id", matchedReport.id);
+      if (updateErr) {
+        // Fallback if correlationScore/isConfirmed columns don't exist yet on remote
+        delete updatePayload.correlationScore;
+        delete updatePayload.isConfirmed;
+        await supabase
+          .from("reports")
+          .update(updatePayload)
+          .eq("id", matched.id);
       }
     }
 
-    return { id: matchedReport.id, corroborated: true };
+    return {
+      id: matched.id,
+      corroborated: true,
+      isConfirmed: confirmation.isConfirmed,
+    };
   }
 
-  // 2. No nearby report found, create a new one
+  // 2. No nearby report found in spatial cluster, create a new candidate report
   const id = data.id || `RPT-${Math.floor(1000 + Math.random() * 9000)}`;
-  
-  const { error } = await supabase.from("reports").insert({
+
+  const insertPayload: Record<string, any> = {
     id,
     reportDate: data.reportDate || new Date().toISOString(),
     sectorId: data.sectorId || "SEC-A",
@@ -231,16 +251,29 @@ export async function createReport(
     gyroPitch: data.gyroscope?.pitch || null,
     gyroRoll: data.gyroscope?.roll || null,
     gyroYaw: data.gyroscope?.yaw || null,
-  });
+    waveformData: data.waveformData ? data.waveformData : null,
+    correlationScore: null,
+    isConfirmed: false,
+  };
 
-  if (error) throw error;
+  const { error: insertErr } = await supabase.from("reports").insert(insertPayload);
+  if (insertErr) {
+    delete insertPayload.waveformData;
+    delete insertPayload.correlationScore;
+    delete insertPayload.isConfirmed;
+    const { error: retryErr } = await supabase.from("reports").insert(insertPayload);
+    if (retryErr) throw retryErr;
+  }
 
   if (data.reportingVehicles && Array.isArray(data.reportingVehicles)) {
-    const records = data.reportingVehicles.map((v: string) => ({ reportId: id, vehicleRef: v }));
+    const records = data.reportingVehicles.map((v: string) => ({
+      reportId: id,
+      vehicleRef: v,
+    }));
     await supabase.from("report_vehicles").insert(records);
   } else {
     await supabase.from("report_vehicles").insert({ reportId: id, vehicleRef });
   }
 
-  return { id, corroborated: false };
+  return { id, corroborated: false, isConfirmed: false };
 }

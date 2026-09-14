@@ -121,6 +121,7 @@ async function classifyEvent(
       roll: reading.gyroscope.y,
       yaw: reading.gyroscope.z,
     },
+    waveformData: sequence,
   });
 }
 

@@ -88,6 +88,18 @@ export const mockReports: Report[] = Array.from({ length: 30 }, (_, i) => {
     reportingVehicles: Array.from({ length: independentReportsCount }, () =>
       generateMockUUID(),
     ),
+    speed: parseFloat((7.5 + Math.random() * 6).toFixed(1)),
+    correlationScore:
+      independentReportsCount > 1
+        ? parseFloat((0.68 + Math.random() * 0.25).toFixed(2))
+        : null,
+    isConfirmed: independentReportsCount >= 2,
+    waveformData: Array.from({ length: 20 }, (_, idx) => {
+      let val = Math.random() * 0.2 - 0.1;
+      if (idx === 7 || idx === 8) val -= 1.8;
+      if (idx === 11 || idx === 12) val += 2.4;
+      return parseFloat(val.toFixed(3));
+    }),
   };
 });
 
