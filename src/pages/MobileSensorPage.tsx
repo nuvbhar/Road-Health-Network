@@ -78,16 +78,13 @@ export const MobileSensorPage: React.FC = () => {
             await import("../services/geolocation");
           const coords = await getCurrentPosition();
 
-          await fetch("/api/reports", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              type: event.type,
-              confidence: event.confidence,
-              latitude: coords.latitude,
-              longitude: coords.longitude,
-              vehicleRef: "V-MOBILE-NODE",
-            }),
+          const { createReport } = await import("../services/api");
+          await createReport({
+            type: event.type as any,
+            confidence: event.confidence,
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            vehicleRef: "V-MOBILE-NODE",
           });
         } catch (err) {
           console.error("Failed to post report:", err);

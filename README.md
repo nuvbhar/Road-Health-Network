@@ -22,13 +22,11 @@ npm install
 ```
 
 ### 2. Start the Application
-The project uses `concurrently` to run both the Vite frontend and Express backend.
+The project is completely serverless. Simply run the Vite frontend:
 ```bash
 npm run dev
 ```
 - **Dashboard**: http://localhost:5173
-- **Backend API**: http://localhost:3001
-- **WebSocket Server**: ws://localhost:3001/ws
 
 ### 3. Connect a Mobile Sensor
 1. Open the dashboard (http://localhost:5173).
@@ -39,7 +37,7 @@ npm run dev
 ## 🛠 Tech Stack
 
 - **Frontend**: React 18, Vite, TypeScript, Zustand (State Management), React-Leaflet
-- **Backend**: Node.js, Express, `ws` (WebSockets), Supabase (PostgreSQL)
+- **Backend / Database**: Supabase (PostgreSQL, Realtime, RLS) - 100% Serverless
 - **Map Tiles**: OpenStreetMap
 
 ## 🗄️ Database Schema
