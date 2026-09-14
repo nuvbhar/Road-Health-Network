@@ -67,7 +67,7 @@ export const DebugMenu: React.FC = () => {
           
           let lat = 0;
           let lng = 0;
-          let type = "";
+          let type: any = "";
           let sectorId = "";
           let sectorName = "";
 
