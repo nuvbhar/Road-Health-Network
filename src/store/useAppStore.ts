@@ -54,7 +54,7 @@ interface AppState {
   setSectorFilter: (sectorId: string | null) => void;
   setStatusFilter: (status: string) => void;
   setSortColumn: (col: string, dir: "asc" | "desc") => void;
-  setSensorReading: (reading: SensorReading) => void;
+  setSensorReading: (reading: SensorReading | null) => void;
   setSensorEvent: (event: RoadEvent | null) => void;
   enqueueSensorEvent: (event: RoadEvent) => void;
   dequeueSensorEvent: () => void;
@@ -129,7 +129,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setSensorReading: (reading) =>
     set((state) => ({
-      liveSensor: { ...state.liveSensor, reading, connected: true },
+      liveSensor: { ...state.liveSensor, reading, connected: !!reading },
     })),
   setSensorEvent: (event) =>
     set((state) => ({

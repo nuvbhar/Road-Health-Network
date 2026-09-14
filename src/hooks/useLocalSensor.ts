@@ -20,6 +20,7 @@ export function useLocalSensor(setActiveDevice: (device: string | null) => void,
       setLocalState("idle");
       setActiveDevice(null);
       setLocalActive(false);
+      useAppStore.getState().setSensorReading(null);
       return;
     }
 

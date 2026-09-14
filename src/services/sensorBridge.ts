@@ -47,6 +47,10 @@ export function startSensorStream(
     );
   }
 
+  let currentGyro = { x: 0, y: 0, z: 0 };
+  let lastGyroCall = 0;
+  const gyroThrottleMs = 150; // Slower poll rate for gyroscope
+
   const handleMotion = (event: DeviceMotionEvent) => {
     const now = performance.now();
     if (now - lastCall < throttleMs) return;
@@ -56,9 +60,15 @@ export function startSensorStream(
     const acc = event.accelerationIncludingGravity || event.acceleration;
     if (!acc) return;
 
-    // For iOS, rotationRate is typically in degrees, Android is sometimes radians.
-    // This is a prototype so we take values as is.
     const rot = event.rotationRate;
+    if (rot && now - lastGyroCall > gyroThrottleMs) {
+      currentGyro = {
+        x: rot.alpha || 0,
+        y: rot.beta || 0,
+        z: rot.gamma || 0,
+      };
+      lastGyroCall = now;
+    }
 
     onReading({
       accelerometer: {
@@ -66,11 +76,7 @@ export function startSensorStream(
         y: (acc.y || 0) / 9.81,
         z: (acc.z || 0) / 9.81,
       },
-      gyroscope: {
-        x: rot?.alpha || 0,
-        y: rot?.beta || 0,
-        z: rot?.gamma || 0,
-      },
+      gyroscope: currentGyro,
       gps: {
         speed: currentSpeed,
         latitude: currentLat,

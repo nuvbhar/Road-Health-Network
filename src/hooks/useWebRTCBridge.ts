@@ -37,6 +37,7 @@ export function useWebRTCBridge(setActiveDevice: (device: string | null) => void
       conn.on("close", () => {
         setActiveDevice(null);
         connRef.current = null;
+        useAppStore.getState().setSensorReading(null);
       });
     });
 
