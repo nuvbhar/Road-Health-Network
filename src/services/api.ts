@@ -66,13 +66,26 @@ export async function fetchReports(
 
   return (reportsData || []).map((r: any) => {
     const vehicles = (r.report_vehicles || []).map((v: any) => v.vehicleRef);
-    const result = {
+    const result: any = {
       ...r,
       rawDataShared: !!r.rawDataShared,
       reportingVehicles: vehicles,
     };
+    
+    if (r.gyroPitch !== null && r.gyroPitch !== undefined) {
+      result.gyroscope = {
+        pitch: r.gyroPitch,
+        roll: r.gyroRoll,
+        yaw: r.gyroYaw,
+      };
+    }
+    
     delete result.report_vehicles;
-    return result;
+    delete result.gyroPitch;
+    delete result.gyroRoll;
+    delete result.gyroYaw;
+    
+    return result as Report;
   });
 }
 

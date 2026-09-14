@@ -93,6 +93,10 @@ export const MobileSensorPage: React.FC = () => {
             latitude: lat,
             longitude: lng,
             vehicleRef: "V-MOBILE-NODE",
+            speed: event.speed,
+            gyroscope: event.gyroscope,
+            weight: event.weight,
+            reportDate: new Date(event.timestamp).toISOString(),
           });
         } catch (err) {
           console.error("Failed to post report:", err);
