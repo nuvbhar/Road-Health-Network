@@ -97,9 +97,8 @@ export const ConfidenceGauge: React.FC = () => {
             fill="none"
             stroke="var(--bg-inset)"
             strokeWidth="16"
-            strokeLinecap={hasEvent || displayConfidence > 10 ? "round" : "butt"}
+            strokeLinecap="round"
             pathLength="100"
-            strokeDasharray={hasEvent || displayConfidence > 10 ? "none" : "2 6"}
           />
           {/* Foreground arc */}
           <path
