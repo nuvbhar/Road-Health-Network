@@ -187,6 +187,52 @@ export const TransmissionPipeline: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {queue.length > 0 && (
+        <div style={{
+          marginTop: "var(--space-6)",
+          paddingTop: "var(--space-4)",
+          borderTop: "1px dashed var(--border-light)",
+        }}>
+          <h4 style={{
+            fontSize: "0.85rem",
+            textTransform: "uppercase",
+            color: "var(--text-secondary)",
+            marginBottom: "var(--space-3)"
+          }}>
+            Queued for Transmission ({queue.length})
+          </h4>
+          <ul style={{
+            listStyle: "none",
+            padding: 0,
+            margin: 0,
+            maxHeight: "120px",
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--space-2)"
+          }}>
+            {queue.map((q, i) => (
+              <li key={i} style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                backgroundColor: "var(--bg-inset)",
+                padding: "6px 12px",
+                borderRadius: "var(--radius-sm)",
+                fontSize: "0.85rem"
+              }}>
+                <span style={{ fontWeight: 500, color: "var(--text-primary)" }}>
+                  {q.type.replace(/_/g, " ")}
+                </span>
+                <span style={{ color: "var(--colour-warning)", fontFamily: "monospace", fontWeight: 700 }}>
+                  {q.confidence}%
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 };

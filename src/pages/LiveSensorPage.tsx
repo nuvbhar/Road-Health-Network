@@ -52,7 +52,7 @@ export const LiveSensorPage: React.FC = () => {
           setSensorReading(data.data);
           processSensorReading(
             data.data,
-            useAppStore.getState().enqueueSensorEvent,
+            () => {}, // Ignore local classification for remote data since remote device sends 'sensor:event'
             useAppStore.getState().setEngineMetrics,
           );
         } else if (data && data.type === "sensor:event") {

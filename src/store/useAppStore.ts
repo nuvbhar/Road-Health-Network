@@ -89,8 +89,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   addReport: async (report) => {
     // Send to backend
     await apiCreateReport(report);
-    // Refresh lists
-    await get().loadInitialData();
+    // Real-time subscription in App.tsx will trigger data reload automatically
   },
 
   updateReportStatus: async (id, status) => {
