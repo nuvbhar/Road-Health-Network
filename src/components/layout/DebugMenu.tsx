@@ -57,36 +57,72 @@ export const DebugMenu: React.FC = () => {
         const { data: dbSectors } = await supabase.from("sectors").select("*");
         const availableSectors = (dbSectors && dbSectors.length > 0) ? dbSectors : mockSectors;
 
-        const allTypes: any[] = ["POTENTIAL_POTHOLE", "SEVERE_POTHOLE", "ROAD_ANOMALY", "SPEED_BUMP", "TRAFFIC_HAZARD"];
+        const { data: existingReportsDB } = await supabase.from("reports").select("id, type, sectorId, sectorName, latitude, longitude").neq("status", "resolved");
+        const activeReports = existingReportsDB ? [...existingReportsDB] : [];
+
+        const allTypes: any[] = ["POTENTIAL_POTHOLE", "SEVERE_POTHOLE", "TRAFFIC_HAZARD"];
         
         for (let i = 0; i < mockCount; i++) {
-          const sector = availableSectors[Math.floor(Math.random() * availableSectors.length)];
-          const type = allTypes[Math.floor(Math.random() * allTypes.length)];
+          const shouldCorroborate = activeReports.length > 0 && Math.random() < 0.4;
           
-          // Random lat/lng inside the sector bounds if available, else fallback
-          let lat = 30.7414 + (Math.random() - 0.5) * 0.05;
-          let lng = 76.6433 + (Math.random() - 0.5) * 0.05;
+          let lat = 0;
+          let lng = 0;
+          let type = "";
+          let sectorId = "";
+          let sectorName = "";
 
-          if (sector.startLat && sector.endLat) {
-            const minLat = Math.min(sector.startLat, sector.endLat);
-            const maxLat = Math.max(sector.startLat, sector.endLat);
-            lat = minLat + Math.random() * (maxLat - minLat);
+          if (shouldCorroborate) {
+            const target = activeReports[Math.floor(Math.random() * activeReports.length)];
+            type = target.type;
+            sectorId = target.sectorId;
+            sectorName = target.sectorName;
+            // Generate extremely close so backend logic matches it (within 50m)
+            lat = target.latitude + (Math.random() - 0.5) * 0.0002; 
+            lng = target.longitude + (Math.random() - 0.5) * 0.0002;
+          } else {
+            const sector = availableSectors[Math.floor(Math.random() * availableSectors.length)];
+            type = allTypes[Math.floor(Math.random() * allTypes.length)];
+            sectorId = sector.id;
+            sectorName = sector.displayName || sector.name || "Unknown Sector";
             
-            const minLng = Math.min(sector.startLng, sector.endLng);
-            const maxLng = Math.max(sector.startLng, sector.endLng);
-            lng = minLng + Math.random() * (maxLng - minLng);
+            lat = 30.7414 + (Math.random() - 0.5) * 0.05;
+            lng = 76.6433 + (Math.random() - 0.5) * 0.05;
+
+            if (sector.startLat && sector.endLat) {
+              const minLat = Math.min(sector.startLat, sector.endLat);
+              const maxLat = Math.max(sector.startLat, sector.endLat);
+              lat = minLat + Math.random() * (maxLat - minLat);
+              
+              const minLng = Math.min(sector.startLng, sector.endLng);
+              const maxLng = Math.max(sector.startLng, sector.endLng);
+              lng = minLng + Math.random() * (maxLng - minLng);
+            }
           }
           
-          await createReport({
+          const hex = () => Math.random().toString(16).slice(2, 10);
+          const mockUUID = `MOCK-${hex()}-${hex().slice(0, 4)}`;
+          
+          const res = await createReport({
             type,
-            sectorId: sector.id,
-            sectorName: sector.displayName || sector.name || "Unknown Sector",
+            sectorId,
+            sectorName,
             latitude: Number(lat.toFixed(6)),
             longitude: Number(lng.toFixed(6)),
             weight: Number((Math.random() * 8 + 1).toFixed(1)),
             confidence: Math.floor(Math.random() * 90) + 10,
-            vehicleRef: `V-RANDOM-${Math.floor(Math.random() * 50)}`, // Small pool to encourage occasional corroboration
+            vehicleRef: mockUUID,
           });
+
+          if (res && !res.corroborated && res.id) {
+            activeReports.push({
+              id: res.id,
+              type,
+              sectorId,
+              sectorName,
+              latitude: lat,
+              longitude: lng
+            } as any);
+          }
         }
       }
       else if (testScenario === "degradation") {

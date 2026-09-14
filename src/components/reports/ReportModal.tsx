@@ -145,7 +145,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
               <div className={styles.metaItem}>
                 <div className={styles.label}>Average Weight (Z-Axis)</div>
                 <div className={styles.value}>
-                  {currentReport.averageWeight ? currentReport.averageWeight.toFixed(2) : currentReport.weight.toFixed(2)} G
+                  {currentReport.averageWeight ? currentReport.averageWeight.toFixed(2) : (currentReport.weight || 0).toFixed(2)} G
                 </div>
               </div>
               <div className={styles.metaItem}>
