@@ -378,7 +378,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
                                 {v.id}
                               </span>
                             </div>
-                            {idx !== 0 && v.offsetMeters !== undefined && (
+                            {idx !== 0 && typeof v.offsetMeters === 'number' && (
                               <div style={{
                                 fontSize: "0.75rem",
                                 color: "var(--text-secondary)",
