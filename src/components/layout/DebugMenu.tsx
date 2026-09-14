@@ -54,27 +54,41 @@ export const DebugMenu: React.FC = () => {
       await supabase.from("sectors").upsert(mockSectors);
 
       if (testScenario === "random") {
+        const { data: dbSectors } = await supabase.from("sectors").select("*");
+        const availableSectors = (dbSectors && dbSectors.length > 0) ? dbSectors : mockSectors;
+
+        const allTypes: any[] = ["POTENTIAL_POTHOLE", "SEVERE_POTHOLE", "ROAD_ANOMALY", "SPEED_BUMP", "TRAFFIC_HAZARD"];
+        
         for (let i = 0; i < mockCount; i++) {
-          const sector = Math.random() > 0.5 ? mockSectors[0] : mockSectors[1];
-          const bases = [
-            { lat: 30.7414, lng: 76.6433 },
-            { lat: 30.7333, lng: 76.7794 },
-          ];
-          const base = bases[Math.floor(Math.random() * bases.length)];
-          const type = Math.random() > 0.3 ? "POTENTIAL_POTHOLE" : "ROAD_ANOMALY";
+          const sector = availableSectors[Math.floor(Math.random() * availableSectors.length)];
+          const type = allTypes[Math.floor(Math.random() * allTypes.length)];
+          
+          // Random lat/lng inside the sector bounds if available, else fallback
+          let lat = 30.7414 + (Math.random() - 0.5) * 0.05;
+          let lng = 76.6433 + (Math.random() - 0.5) * 0.05;
+
+          if (sector.startLat && sector.endLat) {
+            const minLat = Math.min(sector.startLat, sector.endLat);
+            const maxLat = Math.max(sector.startLat, sector.endLat);
+            lat = minLat + Math.random() * (maxLat - minLat);
+            
+            const minLng = Math.min(sector.startLng, sector.endLng);
+            const maxLng = Math.max(sector.startLng, sector.endLng);
+            lng = minLng + Math.random() * (maxLng - minLng);
+          }
           
           await createReport({
             type,
             sectorId: sector.id,
-            sectorName: sector.displayName,
-            latitude: base.lat + (Math.random() - 0.5) * 0.05,
-            longitude: base.lng + (Math.random() - 0.5) * 0.05,
-            weight: Number((Math.random() * 3 + 1).toFixed(1)),
-            confidence: Math.floor(Math.random() * 40) + 60,
-            vehicleRef: `V-RANDOM-${Math.floor(Math.random() * 999)}`,
+            sectorName: sector.displayName || sector.name || "Unknown Sector",
+            latitude: Number(lat.toFixed(6)),
+            longitude: Number(lng.toFixed(6)),
+            weight: Number((Math.random() * 8 + 1).toFixed(1)),
+            confidence: Math.floor(Math.random() * 90) + 10,
+            vehicleRef: `V-RANDOM-${Math.floor(Math.random() * 50)}`, // Small pool to encourage occasional corroboration
           });
         }
-      } 
+      }
       else if (testScenario === "degradation") {
         // Create an initial pothole, then have 3 vehicles report it with increasing weight
         const baseLat = 30.742;
