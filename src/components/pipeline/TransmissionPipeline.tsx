@@ -14,31 +14,27 @@ export const TransmissionPipeline: React.FC = () => {
   );
   const dequeueSensorEvent = useAppStore((state) => state.dequeueSensorEvent);
 
-  // Rapid Pipeline Automation
+  // 1. Dequeue logic: runs whenever stage, event, or queue length changes
   useEffect(() => {
-    // If idle and there are items in the queue, dequeue one to start processing
     if (stage === "idle" && !event && queue.length > 0) {
       dequeueSensorEvent();
-      return;
     }
+  }, [stage, event, queue.length, dequeueSensorEvent]);
 
-    if (event && event.detected && stage === "idle") {
+  // 2. Pipeline sequence: runs ONLY when a new event is loaded
+  useEffect(() => {
+    if (event && event.detected) {
       setTransmissionStage("processing");
-
-      // Register device on first transmission
       registerDevice();
 
-      // Fast Encryption stage (25ms)
       const t1 = setTimeout(() => {
         setTransmissionStage("transmitted");
 
-        // Fast Network Transmission (25ms)
         const t2 = setTimeout(() => {
           setTransmissionStage("confirmed");
 
           if (event && event.type) {
             const uuid = getOrCreateDeviceId();
-
             useAppStore
               .getState()
               .addReport({
@@ -64,7 +60,6 @@ export const TransmissionPipeline: React.FC = () => {
               .catch((e) => console.warn("Failed to push to DB:", e));
           }
 
-          // Quick recovery for next event (150ms)
           const t3 = setTimeout(() => {
             setTransmissionStage("idle");
             useAppStore.getState().setSensorEvent(null);
@@ -78,7 +73,7 @@ export const TransmissionPipeline: React.FC = () => {
 
       return () => clearTimeout(t1);
     }
-  }, [event, stage, setTransmissionStage, queue.length, dequeueSensorEvent]);
+  }, [event]);
 
   if (stage === "idle" && (!queue || queue.length === 0)) {
     return (
