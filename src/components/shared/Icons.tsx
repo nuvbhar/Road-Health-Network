@@ -228,3 +228,38 @@ export const ActivityIcon: React.FC<React.SVGProps<SVGSVGElement>> = (
     <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
   </svg>
 );
+
+export const CarAndRoadIcon: React.FC<React.SVGProps<SVGSVGElement>> = (
+  props,
+) => (
+  <svg
+    aria-hidden={!props["aria-label"]}
+    xmlns="http://www.w3.org/2000/svg"
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    {/* Tires */}
+    <rect x="3" y="13" width="2" height="4" rx="0.5" />
+    <rect x="19" y="13" width="2" height="4" rx="0.5" />
+    {/* Car Body */}
+    <rect x="5" y="11" width="14" height="6" rx="2" />
+    {/* Car Roof */}
+    <path d="M7 11 l1.5 -3 h7 l1.5 3" />
+    {/* Headlights */}
+    <circle cx="8.5" cy="14" r="1" />
+    <circle cx="15.5" cy="14" r="1" />
+    {/* Grill */}
+    <path d="M11.5 15h1" />
+    {/* Road lines below */}
+    <path d="M7 17 L4 22" />
+    <path d="M17 17 L20 22" />
+    <path d="M12 17 v5" strokeDasharray="2 3" />
+  </svg>
+);
