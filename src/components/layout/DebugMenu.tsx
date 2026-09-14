@@ -62,7 +62,7 @@ export const DebugMenu: React.FC = () => {
         const promises = [];
 
         for (let i = 0; i < mockCount; i++) {
-          const shouldCorroborate = existingReportsDB && existingReportsDB.length > 0 && Math.random() < 0.85;
+          const shouldCorroborate = existingReportsDB && existingReportsDB.length > 0 && Math.random() < 0.5;
           
           let lat = 0;
           let lng = 0;
