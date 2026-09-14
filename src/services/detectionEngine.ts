@@ -175,7 +175,7 @@ export function processSensorReading(
         Math.abs(maxZ - triggerMean),
         Math.abs(minZ - triggerMean),
       );
-      const windowSnr = maxDeviation / (triggerStdDev + VARIANCE_SMOOTHING);
+      const windowSnr = maxDeviation / (triggerStdDev + DETECTION_CONFIG.VARIANCE_SMOOTHING);
       const sequence = samples.map((z) => z - triggerMean);
 
       engineState = "COOLDOWN";
