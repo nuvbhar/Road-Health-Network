@@ -50,12 +50,22 @@ export async function fetchSectors(): Promise<Sector[]> {
   }));
 }
 
-export async function fetchActiveReports(): Promise<Report[]> {
-  const { data, error } = await supabase
+export async function fetchReports(
+  filters?: Record<string, string>,
+): Promise<Report[]> {
+  let query = supabase
     .from("reports")
     .select("*, report_vehicles(vehicleRef, timestamp, offsetMeters)")
-    .neq("status", "resolved")
     .order("reportDate", { ascending: false });
+
+  if (filters?.sectorId && filters.sectorId !== "all") {
+    query = query.eq("sectorId", filters.sectorId);
+  }
+  if (filters?.status && filters.status !== "all") {
+    query = query.eq("status", filters.status);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   
   return (data || []).map((row: any) => ({
@@ -75,10 +85,41 @@ export async function fetchActiveReports(): Promise<Report[]> {
   }));
 }
 
-export async function fetchTrendData(): Promise<TrendDataPoint[]> {
-  const { data, error } = await supabase.rpc("get_hourly_trend");
+export async function fetchVehicles(): Promise<Vehicle[]> {
+  const { data: vehicles, error } = await supabase.from("vehicles").select("*");
   if (error) throw error;
-  return data || [];
+  return vehicles as Vehicle[];
+}
+
+export async function fetchTrend(): Promise<TrendDataPoint[]> {
+  const trend = Array.from({ length: 24 }, (_, i) => {
+    const d = new Date();
+    d.setHours(d.getHours() - (23 - i));
+    return {
+      hour: `${d.getHours().toString().padStart(2, "0")}:00`,
+      count: 0,
+    };
+  });
+
+  const { data: recentReports, error } = await supabase.from("reports").select("reportDate");
+  if (error) throw error;
+  
+  const now = Date.now();
+
+  (recentReports || []).forEach((r: any) => {
+    const rDate = new Date(r.reportDate);
+    if (!isNaN(rDate.getTime())) {
+      const diffHours = Math.floor((now - rDate.getTime()) / (1000 * 60 * 60));
+      if (diffHours >= 0 && diffHours < 24) {
+        const bucketIndex = 23 - diffHours;
+        if (trend[bucketIndex]) {
+          trend[bucketIndex].count++;
+        }
+      }
+    }
+  });
+
+  return trend;
 }
 
 // Distance in km using Haversine
@@ -126,6 +167,14 @@ async function recalculateSectorHealth(sectorId: string) {
     .from("sectors")
     .update({ healthIndex, status })
     .eq("id", sectorId);
+}
+
+export async function updateReportStatus(
+  id: string,
+  status: Report["status"],
+): Promise<void> {
+  const { error } = await supabase.from("reports").update({ status }).eq("id", id);
+  if (error) throw error;
 }
 
 export async function createReport(
