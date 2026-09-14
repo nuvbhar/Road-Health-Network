@@ -1,16 +1,16 @@
 import { SensorReading, RoadEvent } from "../store/types";
 import { useAppStore } from "../store/useAppStore";
 import * as tf from "@tensorflow/tfjs";
+import { DETECTION_CONFIG } from "../utils/constants";
 
 // Configuration for Rapid Contextual Anomaly Detection
-const WINDOW_SIZE = 25; // ~800ms history window for rapid response
 const zBuffer: number[] = [];
 let runningSum = 0;
 let runningSqSum = 0;
 
 // Preload the AI Model
 let aiModel: tf.LayersModel | null = null;
-tf.loadLayersModel("/model/model.json")
+tf.loadLayersModel(DETECTION_CONFIG.MODEL_PATH)
   .then((m) => {
     aiModel = m;
     console.log("[Engine] TensorFlow.js 1D-CNN Model loaded successfully.");
@@ -121,7 +121,7 @@ export function processSensorReading(
   runningSum += rawZ;
   runningSqSum += rawZ * rawZ;
 
-  if (zBuffer.length > WINDOW_SIZE) {
+  if (zBuffer.length > DETECTION_CONFIG.WINDOW_SIZE) {
     const removed = zBuffer.shift()!;
     runningSum -= removed;
     runningSqSum -= removed * removed;
@@ -133,12 +133,12 @@ export function processSensorReading(
   const stdDev = Math.sqrt(variance);
 
   const zForce = Math.abs(rawZ - meanZ);
-  let dynamicThreshold = ABSOLUTE_THRESHOLD;
+  let dynamicThreshold = DETECTION_CONFIG.ABSOLUTE_THRESHOLD;
   if (currentSpeed && currentSpeed > 15) {
     dynamicThreshold += (currentSpeed - 15) * 0.04;
   }
 
-  const snr = zForce / (stdDev + VARIANCE_SMOOTHING);
+  const snr = zForce / (stdDev + DETECTION_CONFIG.VARIANCE_SMOOTHING);
 
   // Instantly emit live metrics to UI
   if (onMetrics) {

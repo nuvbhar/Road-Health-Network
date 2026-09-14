@@ -1,4 +1,5 @@
 import { Report } from "../store/types";
+import { haversineDistance } from "../utils/math";
 
 /**
  * Spatial Confirmation and Waveform Correlation Engine
@@ -15,30 +16,6 @@ export const NOMINAL_SPEED_MS = 8.33; // Default 30 km/h in m/s if GPS speed una
 export const TARGET_WAVEFORM_POINTS = 20;
 
 /**
- * Calculates Haversine distance in meters between two lat/lng coordinates.
- */
-export function haversineDistance(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number
-): number {
-  const R = 6371e3; // Earth radius in metres
-  const phi1 = (lat1 * Math.PI) / 180;
-  const phi2 = (lat2 * Math.PI) / 180;
-  const deltaPhi = ((lat2 - lat1) * Math.PI) / 180;
-  const deltaLambda = ((lon2 - lon1) * Math.PI) / 180;
-
-  const a =
-    Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
-    Math.cos(phi1) * Math.cos(phi2) *
-    Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
-
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-/**
  * Resamples a time-series g-force window by physical road distance.
  * Fast cars register narrower, sharper spikes in time; slow cars register wider spikes.
  * Normalizing to a standard road distance (e.g. 5m road segment) aligns physical geometry.
@@ -46,6 +23,7 @@ export function haversineDistance(
 export function resampleByDistance(
   waveform: number[],
   speedMs: number | null | undefined,
+  sampleRateHz: number = 30, // Dynamic sample rate with fallback
   targetPoints: number = TARGET_WAVEFORM_POINTS
 ): number[] {
   if (!waveform || waveform.length === 0) return [];
@@ -55,8 +33,8 @@ export function resampleByDistance(
     ? speedMs
     : NOMINAL_SPEED_MS;
 
-  // Window duration is ~666ms (20 samples at 30Hz)
-  const windowDurationSec = (waveform.length / 30);
+  // Window duration based on dynamic sample rate
+  const windowDurationSec = (waveform.length / sampleRateHz);
   const physicalDistanceMeters = effectiveSpeed * windowDurationSec;
 
   // Standard target distance for normalization = 6.0 meters

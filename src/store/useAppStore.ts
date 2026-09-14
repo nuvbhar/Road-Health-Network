@@ -20,6 +20,8 @@ import {
 } from "../services/api";
 
 interface AppState {
+  isInitialLoading: boolean;
+  globalError: string | null;
   stats: AppStats;
   sectors: Sector[];
   reports: Report[];
@@ -63,9 +65,13 @@ interface AppState {
   ) => void;
   setCalibrationFactor: (factor: number) => void;
   loadInitialData: () => Promise<void>;
+  handleRealtimeUpdate: (payload: any) => void;
 }
 
-export const useAppStore = create<AppState>((set) => ({
+export const useAppStore = create<AppState>((set, get) => ({
+  isInitialLoading: true,
+  globalError: null,
+
   stats: {
     totalReports: 0,
     activeVehicles: 0,
@@ -90,19 +96,29 @@ export const useAppStore = create<AppState>((set) => ({
   setStats: (stats) => set({ stats }),
 
   addReport: async (report) => {
-    // Send to backend
-    await apiCreateReport(report);
-    // Real-time subscription in App.tsx will trigger data reload automatically
+    try {
+      await apiCreateReport(report);
+      // Real-time subscription in App.tsx will trigger data reload automatically
+    } catch (e) {
+      console.error("Failed to push report to database:", e);
+      set({ globalError: e instanceof Error ? e.message : String(e) });
+    }
   },
 
   updateReportStatus: async (id, status) => {
+    const previousReports = get().reports;
     // Optimistic update
     set((state) => ({
       reports: state.reports.map((r) => (r.id === id ? { ...r, status } : r)),
     }));
-    await apiUpdateReportStatus(id, status);
-    const newStats = await fetchStats();
-    set({ stats: newStats });
+    try {
+      await apiUpdateReportStatus(id, status);
+      const newStats = await fetchStats();
+      set({ stats: newStats });
+    } catch (e) {
+      console.error("Failed to update status, rolling back:", e);
+      set({ reports: previousReports, globalError: "Failed to update report status" });
+    }
   },
 
   setSectorFilter: (sectorId) => set({ activeSectorFilter: sectorId }),
@@ -119,26 +135,31 @@ export const useAppStore = create<AppState>((set) => ({
     })),
   enqueueSensorEvent: (event) =>
     set((state) => {
-      const now = event.timestamp ?? Date.now();
+      const localNow = Date.now();
       const DEBOUNCE_MS = 1500;
+      
+      // Store local timestamp on the event for UI rendering and future debounce checks
+      const eventWithLocalTime = { ...event, _localTimestamp: localNow };
 
       // Check against current event
-      if (state.liveSensor.event?.timestamp && Math.abs(now - state.liveSensor.event.timestamp) < DEBOUNCE_MS) {
-        return state;
+      if (state.liveSensor.event && (state.liveSensor.event as any)._localTimestamp) {
+        if (localNow - (state.liveSensor.event as any)._localTimestamp < DEBOUNCE_MS) return state;
       }
+      
       // Check against last queued item
       const lastQueued = state.liveSensor.queue[state.liveSensor.queue.length - 1];
-      if (lastQueued?.timestamp && Math.abs(now - lastQueued.timestamp) < DEBOUNCE_MS) {
-        return state;
+      if (lastQueued && (lastQueued as any)._localTimestamp) {
+        if (localNow - (lastQueued as any)._localTimestamp < DEBOUNCE_MS) return state;
       }
+      
       // Check against most recent session history item
       const lastPushed = state.liveSensor.sessionHistory[0];
-      if (lastPushed?.timestamp && Math.abs(now - lastPushed.timestamp) < DEBOUNCE_MS) {
-        return state;
+      if (lastPushed && (lastPushed as any)._localTimestamp) {
+        if (localNow - (lastPushed as any)._localTimestamp < DEBOUNCE_MS) return state;
       }
 
       return {
-        liveSensor: { ...state.liveSensor, queue: [...state.liveSensor.queue, event] },
+        liveSensor: { ...state.liveSensor, queue: [...state.liveSensor.queue, eventWithLocalTime] },
       };
     }),
   dequeueSensorEvent: () =>
@@ -175,6 +196,7 @@ export const useAppStore = create<AppState>((set) => ({
     })),
 
   loadInitialData: async () => {
+    set({ isInitialLoading: true, globalError: null });
     try {
       const [stats, sectors, reports, vehicles, trendData] = await Promise.all([
         fetchStats(),
@@ -183,10 +205,30 @@ export const useAppStore = create<AppState>((set) => ({
         fetchVehicles(),
         fetchTrend(),
       ]);
-      set({ stats, sectors, reports, vehicles, trendData });
+      set({ stats, sectors, reports, vehicles, trendData, isInitialLoading: false });
     } catch (err) {
       console.error("Failed to load initial data:", err);
+      set({ isInitialLoading: false, globalError: "Failed to load dashboard data." });
     }
+  },
+
+  handleRealtimeUpdate: (payload: any) => {
+    const { eventType, new: newRecord, old: oldRecord } = payload;
+    set((state) => {
+      let nextReports = [...state.reports];
+      if (eventType === 'INSERT') {
+        if (!nextReports.find(r => r.id === newRecord.id)) {
+          nextReports = [newRecord as Report, ...nextReports];
+        }
+      } else if (eventType === 'UPDATE') {
+        nextReports = nextReports.map(r => r.id === newRecord.id ? (newRecord as Report) : r);
+      } else if (eventType === 'DELETE') {
+        nextReports = nextReports.filter(r => r.id !== oldRecord.id);
+      }
+      return { reports: nextReports };
+    });
+    // We can fetch stats in background without blocking UI
+    fetchStats().then(stats => set({ stats })).catch(() => {});
   },
 }));
 

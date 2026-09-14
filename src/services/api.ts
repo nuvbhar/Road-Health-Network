@@ -7,6 +7,7 @@ import {
 } from "../store/types";
 import { supabase } from "./supabaseClient";
 import { processSpatialConfirmation } from "./spatialConfirmation";
+import { haversineDistance } from "../utils/math";
 
 export async function fetchStats(): Promise<AppStats> {
   const [
@@ -101,7 +102,11 @@ export async function fetchTrend(): Promise<TrendDataPoint[]> {
     };
   });
 
-  const { data: recentReports, error } = await supabase.from("reports").select("reportDate");
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { data: recentReports, error } = await supabase
+    .from("reports")
+    .select("reportDate")
+    .gte("reportDate", twentyFourHoursAgo);
   if (error) throw error;
   
   const now = Date.now();
@@ -122,21 +127,7 @@ export async function fetchTrend(): Promise<TrendDataPoint[]> {
   return trend;
 }
 
-// Distance in km using Haversine
-function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371; 
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-  return R * c;
-}
 
 async function recalculateSectorHealth(sectorId: string) {
   const { data: reports } = await supabase
@@ -199,7 +190,8 @@ export async function createReport(
     .from("reports")
     .select("*, report_vehicles(vehicleRef, timestamp, offsetMeters)")
     .neq("status", "resolved")
-    .eq("type", reportType);
+    .eq("type", reportType)
+    .eq("sectorId", data.sectorId || "SEC-A");
 
   const activeReports: Report[] = (activeRows || []).map((r: any) => ({
     ...r,
@@ -228,7 +220,7 @@ export async function createReport(
 
   if (confirmation.matchedReport) {
     const matched = confirmation.matchedReport;
-    const dist = getDistance(lat, lon, matched.latitude, matched.longitude) * 1000; // convert to meters
+    const dist = haversineDistance(lat, lon, matched.latitude, matched.longitude);
 
     if (confirmation.isNewVehicle) {
       await supabase.from("report_vehicles").insert({ 
@@ -271,13 +263,8 @@ export async function createReport(
         .eq("id", matched.id);
 
       if (updateErr) {
-        // Fallback if correlationScore/isConfirmed columns don't exist yet on remote
-        delete updatePayload.correlationScore;
-        delete updatePayload.isConfirmed;
-        await supabase
-          .from("reports")
-          .update(updatePayload)
-          .eq("id", matched.id);
+        console.error("Failed to update report. Schema mismatch?", updateErr);
+        throw updateErr;
       }
 
       // --- HACKATHON: Trust Scoring (Corroborated) ---
@@ -329,11 +316,8 @@ export async function createReport(
 
   const { error: insertErr } = await supabase.from("reports").insert(insertPayload);
   if (insertErr) {
-    delete insertPayload.waveformData;
-    delete insertPayload.correlationScore;
-    delete insertPayload.isConfirmed;
-    const { error: retryErr } = await supabase.from("reports").insert(insertPayload);
-    if (retryErr) throw retryErr;
+    console.error("Failed to insert report. Schema mismatch?", insertErr);
+    throw insertErr;
   }
 
   if (data.reportingVehicles && Array.isArray(data.reportingVehicles)) {

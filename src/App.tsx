@@ -22,6 +22,8 @@ export const App: React.FC = () => {
   useEffect(() => {
     loadInitialData();
 
+    const handleRealtimeUpdate = useAppStore.getState().handleRealtimeUpdate;
+
     // Subscribe to real-time changes to update UI across all views
     const channel = supabase
       .channel('schema-db-changes')
@@ -30,7 +32,7 @@ export const App: React.FC = () => {
         { event: '*', schema: 'public', table: 'reports' },
         (payload) => {
           console.log('Real-time report update received:', payload);
-          loadInitialData();
+          handleRealtimeUpdate(payload);
         }
       )
       .subscribe();
