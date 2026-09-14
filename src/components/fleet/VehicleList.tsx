@@ -71,6 +71,8 @@ export const VehicleList: React.FC = () => {
               <th style={{ padding: "var(--space-2)" }}>Sector</th>
               <th style={{ padding: "var(--space-2)" }}>Status</th>
               <th style={{ padding: "var(--space-2)" }}>Reports Today</th>
+              <th style={{ padding: "var(--space-2)" }}>Trust Score</th>
+              <th style={{ padding: "var(--space-2)" }}>Calibration</th>
               <th style={{ padding: "var(--space-2)" }}>Last Seen</th>
             </tr>
           </thead>
@@ -115,6 +117,32 @@ export const VehicleList: React.FC = () => {
                   }}
                 >
                   {vehicle.reportsToday}
+                </td>
+                <td style={{ padding: "var(--space-3) var(--space-2)" }}>
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px"
+                  }}>
+                    <div style={{
+                      width: "8px",
+                      height: "8px",
+                      borderRadius: "50%",
+                      backgroundColor: (vehicle.trustScore ?? 100) >= 80 ? "var(--colour-ok)" : (vehicle.trustScore ?? 100) >= 40 ? "var(--colour-warning)" : "var(--colour-danger)"
+                    }}></div>
+                    <span style={{ fontVariantNumeric: "tabular-nums" }}>
+                      {vehicle.trustScore !== undefined ? vehicle.trustScore.toFixed(0) : 100}
+                    </span>
+                  </div>
+                </td>
+                <td
+                  style={{
+                    padding: "var(--space-3) var(--space-2)",
+                    fontVariantNumeric: "tabular-nums",
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  {vehicle.calibrationFactor !== undefined ? vehicle.calibrationFactor.toFixed(2) : "1.00"}x
                 </td>
                 <td
                   style={{

@@ -129,6 +129,12 @@ export const SectorMap: React.FC = () => {
                       {sector.reportCount}
                     </span>
                   </div>
+                  <div className={styles.tooltipRow}>
+                    <span>RHI Score:</span>
+                    <span className={styles.tooltipValue}>
+                      {sector.healthIndex !== undefined ? sector.healthIndex.toFixed(1) : 100}/100
+                    </span>
+                  </div>
                 </LeafletTooltip>
               </Polyline>
             );

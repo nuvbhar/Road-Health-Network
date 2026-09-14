@@ -1,7 +1,7 @@
 import React from "react";
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import { Report } from "../../store/types";
-import { XIcon } from "../shared/Icons";
+import { XIcon, AlertTriangleIcon } from "../shared/Icons";
 import { useAppStore } from "../../store/useAppStore";
 import { REPORT_TYPES } from "../../services/reportTypes";
 import styles from "./ReportModal.module.css";
@@ -95,6 +95,25 @@ export const ReportModal: React.FC<ReportModalProps> = ({
           <div className={styles.sectionGroup}>
             <div className={styles.sectionTitle}>Detection Metadata</div>
 
+            {currentReport.degradationStatus === "degrading_rapidly" && (
+              <div style={{
+                background: "rgba(220, 38, 38, 0.1)",
+                border: "1px solid var(--colour-danger)",
+                color: "var(--colour-danger)",
+                padding: "8px 12px",
+                borderRadius: "6px",
+                marginBottom: "16px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontWeight: 500,
+                fontSize: "var(--type-caption)",
+              }}>
+                <AlertTriangleIcon width={16} height={16} />
+                Predictive Maintenance Alert: This pothole is deteriorating rapidly across multiple corroborations. Immediate repair recommended.
+              </div>
+            )}
+
             <div className={styles.mapThumbnail}>
               <MapContainer
                 center={[currentReport.latitude, currentReport.longitude]}
@@ -124,15 +143,9 @@ export const ReportModal: React.FC<ReportModalProps> = ({
                 </div>
               </div>
               <div className={styles.metaItem}>
-                <div className={styles.label}>Initial Source</div>
-                <div
-                  className={styles.value}
-                  style={{
-                    fontFamily: "monospace",
-                    fontSize: "var(--type-data)",
-                  }}
-                >
-                  {currentReport.vehicleRef}
+                <div className={styles.label}>Average Weight (Z-Axis)</div>
+                <div className={styles.value}>
+                  {currentReport.averageWeight ? currentReport.averageWeight.toFixed(2) : currentReport.weight.toFixed(2)} G
                 </div>
               </div>
               <div className={styles.metaItem}>
