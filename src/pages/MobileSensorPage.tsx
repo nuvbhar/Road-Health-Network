@@ -96,7 +96,7 @@ export const MobileSensorPage: React.FC = () => {
             speed: event.speed,
             gyroscope: event.gyroscope,
             weight: event.weight,
-            reportDate: new Date(event.timestamp).toISOString(),
+            reportDate: new Date(event.timestamp || Date.now()).toISOString(),
           });
         } catch (err) {
           console.error("Failed to post report:", err);
