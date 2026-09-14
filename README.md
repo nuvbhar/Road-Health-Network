@@ -40,6 +40,10 @@ npm run dev
 - **Backend / Database**: Supabase (PostgreSQL, Realtime, RLS) - 100% Serverless
 - **Map Tiles**: OpenStreetMap
 
+## 🏛 System Architecture
+
+For a deep dive into the functional and non-functional architecture of the system (including Use Case, Sequence, State Machine, Deployment, and Component diagrams), please see the [ARCHITECTURE.md](./ARCHITECTURE.md) file.
+
 ## 🗄️ Database Schema
 
 The application uses Supabase (PostgreSQL) for persistence. The database schema is visualized below:

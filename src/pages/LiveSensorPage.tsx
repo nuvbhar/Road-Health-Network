@@ -162,31 +162,50 @@ export const LiveSensorPage: React.FC = () => {
                 gap: "var(--space-2)", 
                 width: "100%", 
                 padding: "var(--space-4)",
-                backgroundColor: "var(--bg-inset)",
-                border: "1px solid var(--border-default)",
+                backgroundColor: "#f5f5f5",
+                color: "#333",
+                border: "1px solid #e5e5e5",
                 borderRadius: "var(--radius-md)"
               }}>
                 {(['accelerometer', 'gyroscope', 'gps'] as const).map(sensor => {
                   const state = permissions[sensor];
                   
-                  if (state === "idle") {
-                    return <div key={sensor} style={{ color: "var(--text-muted)", fontStyle: "italic" }}>{sensor} waiting...</div>;
-                  }
+                  let statusText = "";
+                  let statusColor = "";
                   
-                  if (state === "detecting") {
-                    return <div key={sensor} style={{ color: "var(--colour-warning)", fontStyle: "italic" }}>{sensor} detecting...</div>;
+                  switch(state) {
+                    case "idle":
+                      statusText = "Waiting...";
+                      statusColor = "#888";
+                      break;
+                    case "detecting":
+                      statusText = "Detecting...";
+                      statusColor = "#d97706";
+                      break;
+                    case "granted":
+                      statusText = "Connected";
+                      statusColor = "#16a34a";
+                      break;
+                    case "denied":
+                      statusText = "Permission Denied";
+                      statusColor = "#dc2626";
+                      break;
+                    case "not_supported":
+                    default:
+                      statusText = "Not Supported";
+                      statusColor = "#dc2626";
+                      break;
                   }
-                  
-                  if (state === "granted") {
-                    return <div key={sensor} style={{ color: "var(--colour-warning)", fontStyle: "italic" }}>{sensor} connected</div>;
-                  }
-                  
-                  const failReason = state === "denied" ? "permission not given" : "device not compatible";
+
                   return (
-                    <div key={sensor} style={{ fontStyle: "italic" }}>
-                      <span style={{ color: "var(--colour-warning)" }}>{sensor} </span>
-                      <span style={{ color: "var(--colour-danger)", fontStyle: "normal", fontWeight: "bold" }}>failed</span>
-                      <span style={{ color: "var(--colour-warning)" }}> - {failReason}</span>
+                    <div key={sensor} style={{ 
+                      display: "flex", 
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      fontWeight: 500
+                    }}>
+                      <span style={{ textTransform: "capitalize" }}>{sensor === "gps" ? "GPS" : sensor}</span>
+                      <span style={{ color: statusColor, fontWeight: 600 }}>{statusText}</span>
                     </div>
                   );
                 })}
