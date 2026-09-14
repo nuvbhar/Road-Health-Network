@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useAppStore } from "../store/useAppStore";
 import { SensorCanvas } from "../components/sensor/SensorCanvas";
 import { TransmissionPipeline } from "../components/pipeline/TransmissionPipeline";
+import { TransmissionHistory } from "../components/pipeline/TransmissionHistory";
 import { PrivacyPanel } from "../components/privacy/PrivacyPanel";
 import { ConfidenceGauge } from "../components/sensor/ConfidenceGauge";
 import { PairingQR } from "../components/sensor/PairingQR";
@@ -599,6 +600,9 @@ export const LiveSensorPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* NEW: Transmission History & Queue Section */}
+      <TransmissionHistory />
 
       <PrivacyPanel />
     </div>

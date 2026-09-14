@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useAppStore } from "../../store/useAppStore";
-import { CheckCircleIcon, AlertTriangleIcon, ActivityIcon, XIcon, MapIcon } from "../shared/Icons";
+import { CheckCircleIcon, AlertTriangleIcon } from "../shared/Icons";
 import styles from "./TransmissionPipeline.module.css";
 import { getOrCreateDeviceId, registerDevice } from "../../services/deviceIdentity";
 
 export const TransmissionPipeline: React.FC = () => {
-  const [isQueueModalOpen, setIsQueueModalOpen] = useState(false);
   const queue = useAppStore((state) => state.liveSensor.queue);
   const event = useAppStore((state) => state.liveSensor.event);
   const stage = useAppStore((state) => state.transmission.stage);
@@ -96,30 +95,6 @@ export const TransmissionPipeline: React.FC = () => {
         ) : (
           <span className={styles.headerTitle}>Idle...</span>
         )}
-        
-        {queue.length > 0 && (
-          <button 
-            onClick={() => setIsQueueModalOpen(true)}
-            style={{
-              marginLeft: "auto",
-              backgroundColor: "rgba(217, 119, 6, 0.15)",
-              color: "var(--colour-warning)",
-              padding: "4px 10px",
-              borderRadius: "16px",
-              fontSize: "0.75rem",
-              fontWeight: 700,
-              border: "1px solid rgba(217, 119, 6, 0.3)",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-              transition: "all 0.2s ease"
-            }}
-          >
-            <ActivityIcon width={14} height={14} />
-            {queue.length} Queued
-          </button>
-        )}
       </div>
 
       <div className={styles.pipeline}>
@@ -193,142 +168,6 @@ export const TransmissionPipeline: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Queue Modal Overlay */}
-      {isQueueModalOpen && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: "rgba(0, 0, 0, 0.5)",
-          backdropFilter: "blur(4px)",
-          zIndex: 9999,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "var(--space-4)"
-        }} onClick={() => setIsQueueModalOpen(false)}>
-          <div style={{
-            backgroundColor: "var(--bg-surface)",
-            borderRadius: "var(--radius-lg)",
-            width: "100%",
-            maxWidth: "600px",
-            maxHeight: "80vh",
-            display: "flex",
-            flexDirection: "column",
-            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
-            border: "1px solid var(--border-light)",
-            overflow: "hidden"
-          }} onClick={(e) => e.stopPropagation()}>
-            <div style={{
-              padding: "var(--space-4) var(--space-6)",
-              borderBottom: "1px solid var(--border-light)",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              backgroundColor: "var(--bg-elevated)"
-            }}>
-              <h3 style={{ margin: 0, display: "flex", alignItems: "center", gap: "var(--space-2)", fontSize: "1.1rem" }}>
-                <ActivityIcon color="var(--colour-warning)" />
-                Queued Reports ({queue.length})
-              </h3>
-              <button 
-                onClick={() => setIsQueueModalOpen(false)}
-                className={styles.dismissBtn}
-              >
-                <XIcon />
-              </button>
-            </div>
-            
-            <div style={{
-              padding: "var(--space-4)",
-              overflowY: "auto",
-              flex: 1,
-              display: "flex",
-              flexDirection: "column",
-              gap: "8px"
-            }}>
-              {queue.length === 0 ? (
-                <div style={{ textAlign: "center", color: "var(--text-muted)", padding: "var(--space-8) 0" }}>
-                  Queue is currently empty
-                </div>
-              ) : (
-                [...queue].sort((a, b) => b.confidence - a.confidence).map((q, i) => {
-                  const isHigh = q.confidence >= 85;
-                  const isMed = q.confidence >= 60 && !isHigh;
-                  
-                  const severityColor = isHigh ? "#dc2626" : isMed ? "#f97316" : "#f59e0b";
-
-                  return (
-                    <div key={i} style={{
-                      backgroundColor: "#f7f8fa",
-                      borderRadius: "6px",
-                      padding: "10px 14px",
-                      border: "1px solid #e2e5ea",
-                      borderLeft: `3px solid ${severityColor}`,
-                      display: "grid",
-                      gridTemplateColumns: "20px 1fr 90px 70px 20px",
-                      alignItems: "center",
-                      gap: "12px"
-                    }}>
-                      <div style={{ display: "flex", justifyContent: "center" }}>
-                        <AlertTriangleIcon width={16} height={16} color={severityColor} />
-                      </div>
-                      
-                      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                        <span style={{ fontWeight: 600, fontSize: "14px", color: "#1e293b" }}>
-                          {q.type?.replace(/POTENTIAL_/g, "")?.replace(/_/g, " ") || "ANOMALY"}
-                        </span>
-                        <div style={{ display: "flex", alignItems: "center", gap: "4px", fontFamily: "monospace", fontSize: "12px", color: "#64748b" }}>
-                          <MapIcon width={10} height={10} />
-                          {q.latitude?.toFixed(5) || "---"}, {q.longitude?.toFixed(5) || "---"}
-                        </div>
-                      </div>
-                      
-                      <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                        <span style={{ 
-                          color: severityColor, 
-                          backgroundColor: `${severityColor}1A`,
-                          width: "48px",
-                          textAlign: "center",
-                          padding: "2px 0",
-                          borderRadius: "4px",
-                          fontFamily: "monospace", 
-                          fontWeight: 600,
-                          fontSize: "12px"
-                        }}>
-                          {q.confidence}%
-                        </span>
-                      </div>
-                      
-                      <div style={{ 
-                        textAlign: "right",
-                        fontSize: "12px",
-                        color: "#64748b",
-                        fontVariantNumeric: "tabular-nums"
-                      }}>
-                        {q.timestamp ? new Date(q.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ""}
-                      </div>
-                      
-                      <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                        <button 
-                          onClick={() => useAppStore.getState().removeSensorEventFromQueue(queue.indexOf(q))}
-                          className={styles.dismissBtn}
-                          title="Dismiss from queue"
-                        >
-                          <XIcon width={16} height={16} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
