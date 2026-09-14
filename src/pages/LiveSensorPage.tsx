@@ -52,11 +52,11 @@ export const LiveSensorPage: React.FC = () => {
           setSensorReading(data.data);
           processSensorReading(
             data.data,
-            setSensorEvent,
+            useAppStore.getState().enqueueSensorEvent,
             useAppStore.getState().setEngineMetrics,
           );
         } else if (data && data.type === "sensor:event") {
-          setSensorEvent(data.data);
+          useAppStore.getState().enqueueSensorEvent(data.data);
         }
       });
 
@@ -120,7 +120,7 @@ export const LiveSensorPage: React.FC = () => {
           setSensorReading(r);
           processSensorReading(
             r,
-            setSensorEvent,
+            useAppStore.getState().enqueueSensorEvent,
             useAppStore.getState().setEngineMetrics,
           );
         });

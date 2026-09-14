@@ -5,25 +5,33 @@ import styles from "./TransmissionPipeline.module.css";
 import { getOrCreateDeviceId, registerDevice } from "../../services/deviceIdentity";
 
 export const TransmissionPipeline: React.FC = () => {
+  const queue = useAppStore((state) => state.liveSensor.queue);
   const event = useAppStore((state) => state.liveSensor.event);
   const stage = useAppStore((state) => state.transmission.stage);
   const setTransmissionStage = useAppStore(
     (state) => state.setTransmissionStage,
   );
+  const dequeueSensorEvent = useAppStore((state) => state.dequeueSensorEvent);
 
   // Rapid Pipeline Automation
   useEffect(() => {
+    // If idle and there are items in the queue, dequeue one to start processing
+    if (stage === "idle" && !event && queue.length > 0) {
+      dequeueSensorEvent();
+      return;
+    }
+
     if (event && event.detected && stage === "idle") {
       setTransmissionStage("processing");
 
       // Register device on first transmission
       registerDevice();
 
-      // Fast Encryption stage (200ms)
+      // Fast Encryption stage (50ms)
       const t1 = setTimeout(() => {
         setTransmissionStage("transmitted");
 
-        // Fast Network Transmission (250ms)
+        // Fast Network Transmission (50ms)
         const t2 = setTimeout(() => {
           setTransmissionStage("confirmed");
 
@@ -55,23 +63,23 @@ export const TransmissionPipeline: React.FC = () => {
               .catch((e) => console.warn("Failed to push to DB:", e));
           }
 
-          // Quick recovery for next event (1500ms)
+          // Quick recovery for next event (400ms)
           const t3 = setTimeout(() => {
             setTransmissionStage("idle");
             useAppStore.getState().setSensorEvent(null);
-          }, 1500);
+          }, 400);
 
           return () => clearTimeout(t3);
-        }, 250);
+        }, 50);
 
         return () => clearTimeout(t2);
-      }, 200);
+      }, 50);
 
       return () => clearTimeout(t1);
     }
-  }, [event, stage, setTransmissionStage]);
+  }, [event, stage, setTransmissionStage, queue.length, dequeueSensorEvent]);
 
-  if (stage === "idle") {
+  if (stage === "idle" && (!queue || queue.length === 0)) {
     return (
       <div className={styles.containerEmpty}>
         <div className={styles.emptyText}>Awaiting anomaly detection...</div>
@@ -82,13 +90,30 @@ export const TransmissionPipeline: React.FC = () => {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <AlertTriangleIcon color="var(--colour-danger)" />
-        <span className={styles.headerTitle}>
-          Anomaly Detected: {event?.type?.replace(/_/g, " ")}
-        </span>
-        <span className={styles.headerConf}>
-          {event?.confidence}% Confidence
-        </span>
+        {event ? (
+          <>
+            <AlertTriangleIcon color="var(--colour-danger)" />
+            <span className={styles.headerTitle}>
+              {stage === "confirmed" ? "Pushed:" : "Processing:"} {event?.type?.replace(/_/g, " ")}
+            </span>
+          </>
+        ) : (
+          <span className={styles.headerTitle}>Idle...</span>
+        )}
+        
+        {queue.length > 0 && (
+          <span style={{
+            marginLeft: "auto",
+            backgroundColor: "rgba(217, 119, 6, 0.15)",
+            color: "var(--colour-warning)",
+            padding: "2px 8px",
+            borderRadius: "12px",
+            fontSize: "0.75rem",
+            fontWeight: 700
+          }}>
+            {queue.length} in Queue
+          </span>
+        )}
       </div>
 
       <div className={styles.pipeline}>

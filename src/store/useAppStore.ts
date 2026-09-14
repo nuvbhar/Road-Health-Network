@@ -35,6 +35,7 @@ interface AppState {
     connected: boolean;
     reading: SensorReading | null;
     event: RoadEvent | null;
+    queue: RoadEvent[];
     metrics: EngineMetrics | null;
     calibrationFactor: number;
   };
@@ -51,6 +52,8 @@ interface AppState {
   setSortColumn: (col: string, dir: "asc" | "desc") => void;
   setSensorReading: (reading: SensorReading) => void;
   setSensorEvent: (event: RoadEvent | null) => void;
+  enqueueSensorEvent: (event: RoadEvent) => void;
+  dequeueSensorEvent: () => void;
   setEngineMetrics: (metrics: EngineMetrics) => void;
   setTransmissionStage: (
     stage: "idle" | "processing" | "transmitted" | "confirmed",
@@ -78,7 +81,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   sortColumn: "reportDate",
   sortDirection: "desc",
 
-  liveSensor: { connected: false, reading: null, event: null, metrics: null, calibrationFactor: 1.0 },
+  liveSensor: { connected: false, reading: null, event: null, queue: [], metrics: null, calibrationFactor: 1.0 },
   transmission: { stage: "idle" },
 
   setStats: (stats) => set({ stats }),
@@ -112,6 +115,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((state) => ({
       liveSensor: { ...state.liveSensor, event },
     })),
+  enqueueSensorEvent: (event) =>
+    set((state) => ({
+      liveSensor: { ...state.liveSensor, queue: [...state.liveSensor.queue, event] },
+    })),
+  dequeueSensorEvent: () =>
+    set((state) => {
+      if (state.liveSensor.queue.length === 0) return state;
+      const [nextEvent, ...rest] = state.liveSensor.queue;
+      return {
+        liveSensor: { ...state.liveSensor, event: nextEvent, queue: rest },
+      };
+    }),
   setEngineMetrics: (metrics) =>
     set((state) => ({
       liveSensor: { ...state.liveSensor, metrics },
