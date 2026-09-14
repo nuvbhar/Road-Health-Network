@@ -84,32 +84,8 @@ export const ReportMarkerLayer: React.FC<ReportMarkerLayerProps> = ({
                           Speed: {(report.speed * 3.6).toFixed(0)} km/h
                         </div>
                       )}
-                      <div
-                        style={{
-<<<<<<< HEAD
-                          display: "flex",
-                          flexWrap: "wrap",
-                          gap: "2px",
-                        }}
-                      >
-                        {report.reportingVehicles?.map((v) => (
-                          <span
-                            key={v.id}
-                            style={{
-                              fontSize: "9px",
-                              padding: "1px 4px",
-                              background: "#f1f5f9",
-                              border: "1px solid #cbd5e1",
-                              borderRadius: "4px",
-                              fontFamily: "monospace",
-                            }}
-                          >
-                            {v.id.substring(0, 5)}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    {vehicleCount >= 1 && (
+
+
                       <div
                         style={{
                           fontSize: "10px",
