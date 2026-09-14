@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import Peer from "peerjs";
+import Peer, { DataConnection } from "peerjs";
 import { useAppStore } from "../store/useAppStore";
 import { processSensorReading } from "../services/detectionEngine";
 
 export function useWebRTCBridge(setActiveDevice: (device: string | null) => void) {
   const [peerId, setPeerId] = useState<string | undefined>(undefined);
   const peerRef = useRef<Peer | null>(null);
+
+  const connRef = useRef<DataConnection | null>(null);
 
   useEffect(() => {
     const peer = new Peer();
@@ -16,6 +18,7 @@ export function useWebRTCBridge(setActiveDevice: (device: string | null) => void
 
     peer.on("connection", (conn) => {
       console.log("Mobile device connected via WebRTC");
+      connRef.current = conn;
       setActiveDevice("External Mobile Device (WebRTC)");
 
       conn.on("data", (data: any) => {
@@ -23,7 +26,7 @@ export function useWebRTCBridge(setActiveDevice: (device: string | null) => void
           useAppStore.getState().setSensorReading(data.data);
           processSensorReading(
             data.data,
-            () => {}, // Ignore local classification for remote data since remote device sends 'sensor:event'
+            () => {},
             useAppStore.getState().setEngineMetrics,
           );
         } else if (data && data.type === "sensor:event") {
@@ -33,6 +36,7 @@ export function useWebRTCBridge(setActiveDevice: (device: string | null) => void
 
       conn.on("close", () => {
         setActiveDevice(null);
+        connRef.current = null;
       });
     });
 
@@ -43,5 +47,11 @@ export function useWebRTCBridge(setActiveDevice: (device: string | null) => void
     };
   }, [setActiveDevice]);
 
-  return { peerId };
+  const disconnectMobile = () => {
+    if (connRef.current) {
+      connRef.current.close();
+    }
+  };
+
+  return { peerId, disconnectMobile };
 }

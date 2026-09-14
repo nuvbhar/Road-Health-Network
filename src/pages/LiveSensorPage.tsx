@@ -24,7 +24,7 @@ export const LiveSensorPage: React.FC = () => {
     }
   }, [reading, activeDevice, localActive]);
 
-  const { peerId } = useWebRTCBridge(setActiveDevice);
+  const { peerId, disconnectMobile } = useWebRTCBridge(setActiveDevice);
   const { localState, handleLocalToggle } = useLocalSensor(setActiveDevice, setLocalActive);
 
   return (
@@ -176,7 +176,11 @@ export const LiveSensorPage: React.FC = () => {
         </div>
 
         {/* External Option */}
-        <PairingQR peerId={peerId} />
+        <PairingQR 
+          peerId={peerId} 
+          isActive={activeDevice === "External Mobile Device (WebRTC)"} 
+          onDisconnect={disconnectMobile} 
+        />
       </div>
 
       <SensorCanvas />

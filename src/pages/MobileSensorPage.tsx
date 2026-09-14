@@ -13,7 +13,6 @@ import { getOrCreateDeviceId, registerDevice } from "../services/deviceIdentity"
 export const MobileSensorPage: React.FC = () => {
   const [isActive, setIsActive] = useState(false);
   const [status, setStatus] = useState("Disconnected");
-  const [lastEvent, setLastEvent] = useState<any>(null);
   const [searchParams] = useSearchParams();
   const deviceId = getOrCreateDeviceId();
 
@@ -74,7 +73,6 @@ export const MobileSensorPage: React.FC = () => {
 
       // 2. Process locally for events
       processSensorReading(reading, async (event) => {
-        setLastEvent(event);
         if (peerConnRef.current?.open) {
           peerConnRef.current.send({ type: "sensor:event", data: event });
         }
@@ -130,7 +128,7 @@ export const MobileSensorPage: React.FC = () => {
     <div
       style={{
         padding: "var(--space-6)",
-        minHeight: "100vh",
+        minHeight: "70vh",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -138,14 +136,6 @@ export const MobileSensorPage: React.FC = () => {
         backgroundColor: "var(--bg-default)",
       }}
     >
-      <h1
-        style={{
-          fontSize: "var(--type-heading)",
-          marginBottom: "var(--space-2)",
-        }}
-      >
-        Mobile Sensor
-      </h1>
       <p
         style={{
           color: "var(--text-secondary)",
@@ -185,31 +175,6 @@ export const MobileSensorPage: React.FC = () => {
         >
           Stop Sensor Stream
         </Button>
-      )}
-
-      {lastEvent && (
-        <div
-          style={{
-            marginTop: "var(--space-8)",
-            padding: "var(--space-4)",
-            backgroundColor: "var(--bg-elevated)",
-            borderRadius: "var(--radius-lg)",
-            width: "100%",
-            maxWidth: "300px",
-          }}
-        >
-          <h3 style={{ marginBottom: "var(--space-2)" }}>Latest Event</h3>
-          <p>
-            <strong>Type:</strong> {lastEvent.type}
-          </p>
-          <p>
-            <strong>Confidence:</strong> {lastEvent.confidence}%
-          </p>
-          <p>
-            <strong>Time:</strong>{" "}
-            {new Date(lastEvent.timestamp).toLocaleTimeString()}
-          </p>
-        </div>
       )}
     </div>
   );

@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
 import QRCode from "react-qr-code";
+import { Button } from "../shared/Button";
 
 interface PairingQRProps {
   peerId?: string;
+  isActive?: boolean;
+  onDisconnect?: () => void;
 }
 
-export const PairingQR: React.FC<PairingQRProps> = ({ peerId }) => {
+export const PairingQR: React.FC<PairingQRProps> = ({ peerId, isActive, onDisconnect }) => {
   const [url, setUrl] = useState("");
 
   useEffect(() => {
@@ -62,59 +65,83 @@ export const PairingQR: React.FC<PairingQRProps> = ({ peerId }) => {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          width: "100%",
         }}
       >
-        <div
-          style={{
-            background: "white",
-            padding: "16px",
-            borderRadius: "12px",
-            border: "1px solid var(--border-default)",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
+        {isActive ? (
+          <div style={{ textAlign: "center", width: "100%" }}>
+            <div style={{ 
+              width: 80, 
+              height: 80, 
+              borderRadius: "50%", 
+              backgroundColor: "rgba(22, 163, 74, 0.15)",
+              color: "var(--colour-ok)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto var(--space-4)",
+              fontSize: "2rem"
+            }}>
+              ✓
+            </div>
+            <p style={{ fontWeight: 600, marginBottom: "var(--space-6)" }}>External Mobile Connected</p>
+            <Button variant="danger" onClick={onDisconnect} style={{ width: "100%" }}>
+              Disconnect Mobile
+            </Button>
+          </div>
+        ) : (
           <div
             style={{
-              filter: peerId ? "none" : "blur(8px)",
-              opacity: peerId ? 1 : 0.4,
-              transition: "filter 0.5s ease, opacity 0.5s ease",
+              background: "white",
+              padding: "16px",
+              borderRadius: "12px",
+              border: "1px solid var(--border-default)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+              position: "relative",
+              overflow: "hidden",
             }}
           >
-            <QRCode value={url} size={160} />
-          </div>
-          {!peerId && (
             <div
               style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: "rgba(255, 255, 255, 0.6)",
-                backdropFilter: "blur(2px)",
+                filter: peerId ? "none" : "blur(8px)",
+                opacity: peerId ? 1 : 0.4,
+                transition: "filter 0.5s ease, opacity 0.5s ease",
               }}
             >
-              <span
+              <QRCode value={url} size={160} />
+            </div>
+            {!peerId && (
+              <div
                 style={{
-                  fontSize: "0.85rem",
-                  fontWeight: 600,
-                  color: "var(--text-primary)",
-                  backgroundColor: "var(--bg-surface)",
-                  padding: "var(--space-2) var(--space-4)",
-                  borderRadius: "var(--radius-full)",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "rgba(255, 255, 255, 0.6)",
+                  backdropFilter: "blur(2px)",
                 }}
               >
-                Generating P2P...
-              </span>
-            </div>
-          )}
-        </div>
+                <span
+                  style={{
+                    fontSize: "0.85rem",
+                    fontWeight: 600,
+                    color: "var(--text-primary)",
+                    backgroundColor: "var(--bg-surface)",
+                    padding: "4px 12px",
+                    borderRadius: "20px",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  Initializing...
+                </span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
