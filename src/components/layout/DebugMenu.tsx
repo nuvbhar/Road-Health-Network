@@ -56,47 +56,45 @@ export const DebugMenu: React.FC = () => {
       if (testScenario === "random") {
         const { data: dbSectors } = await supabase.from("sectors").select("*");
         const availableSectors = (dbSectors && dbSectors.length > 0) ? dbSectors : mockSectors;
-
-        const { data: existingReportsDB } = await supabase.from("reports").select("id, type, sectorId, sectorName, latitude, longitude").neq("status", "resolved");
         const allTypes: any[] = ["POTENTIAL_POTHOLE", "SEVERE_POTHOLE"];
-        const promises = [];
 
-        for (let i = 0; i < mockCount; i++) {
-          const shouldCorroborate = existingReportsDB && existingReportsDB.length > 0 && Math.random() < 0.5;
-          
-          let lat = 0;
-          let lng = 0;
-          let type: any = "";
-          let sectorId = "";
-          let sectorName = "";
+        // Pre-generate a set of "pothole locations" that multiple vehicles will report
+        // This ensures corroboration happens reliably
+        const numLocations = Math.max(2, Math.ceil(mockCount * 0.4)); // ~40% unique locations
+        const potholeLocations: { lat: number; lng: number; type: any; sectorId: string; sectorName: string }[] = [];
 
-          if (shouldCorroborate) {
-            const target = existingReportsDB[Math.floor(Math.random() * existingReportsDB.length)];
-            type = target.type;
-            sectorId = target.sectorId;
-            sectorName = target.sectorName;
-            lat = target.latitude + (Math.random() - 0.5) * 0.00008; 
-            lng = target.longitude + (Math.random() - 0.5) * 0.00008;
-          } else {
-            const sector = availableSectors[Math.floor(Math.random() * availableSectors.length)];
-            type = allTypes[Math.floor(Math.random() * allTypes.length)];
-            sectorId = sector.id;
-            sectorName = sector.displayName || sector.name || "Unknown Sector";
-            
-            lat = 30.7414 + (Math.random() - 0.5) * 0.05;
-            lng = 76.6433 + (Math.random() - 0.5) * 0.05;
+        for (let i = 0; i < numLocations; i++) {
+          const sector = availableSectors[Math.floor(Math.random() * availableSectors.length)];
+          const type = allTypes[Math.floor(Math.random() * allTypes.length)];
+          let lat = 30.7414 + (Math.random() - 0.5) * 0.05;
+          let lng = 76.6433 + (Math.random() - 0.5) * 0.05;
 
-            if (sector.startLat && sector.endLat) {
-              const minLat = Math.min(sector.startLat, sector.endLat);
-              const maxLat = Math.max(sector.startLat, sector.endLat);
-              lat = minLat + Math.random() * (maxLat - minLat);
-              
-              const minLng = Math.min(sector.startLng, sector.endLng);
-              const maxLng = Math.max(sector.startLng, sector.endLng);
-              lng = minLng + Math.random() * (maxLng - minLng);
-            }
+          if (sector.startLat && sector.endLat) {
+            const minLat = Math.min(sector.startLat, sector.endLat);
+            const maxLat = Math.max(sector.startLat, sector.endLat);
+            lat = minLat + Math.random() * (maxLat - minLat);
+            const minLng = Math.min(sector.startLng, sector.endLng);
+            const maxLng = Math.max(sector.startLng, sector.endLng);
+            lng = minLng + Math.random() * (maxLng - minLng);
           }
-          
+
+          potholeLocations.push({
+            lat,
+            lng,
+            type,
+            sectorId: sector.id,
+            sectorName: sector.displayName || sector.name || "Unknown Sector",
+          });
+        }
+
+        // Generate reports sequentially so spatial confirmation can detect nearby reports
+        for (let i = 0; i < mockCount; i++) {
+          // Pick a location — reuse existing locations so some get corroborated
+          const loc = potholeLocations[Math.floor(Math.random() * potholeLocations.length)];
+          // Add small GPS jitter (±4m) to simulate real GPS variance
+          const lat = loc.lat + (Math.random() - 0.5) * 0.00008;
+          const lng = loc.lng + (Math.random() - 0.5) * 0.00008;
+
           const hex = () => Math.random().toString(16).slice(2, 10);
           const mockUUID = `MOCK-${hex()}-${hex().slice(0, 4)}`;
           
@@ -104,22 +102,18 @@ export const DebugMenu: React.FC = () => {
           const randomPastMs = Math.floor(Math.random() * 24 * 60 * 60 * 1000);
           const reportDate = new Date(Date.now() - randomPastMs).toISOString();
 
-          promises.push(
-            createReport({
-              type,
-              sectorId,
-              sectorName,
-              latitude: Number(lat.toFixed(6)),
-              longitude: Number(lng.toFixed(6)),
-              weight: Number((Math.random() * 8 + 1).toFixed(1)),
-              confidence: Math.floor(Math.random() * 90) + 10,
-              vehicleRef: mockUUID,
-              reportDate
-            })
-          );
+          await createReport({
+            type: loc.type,
+            sectorId: loc.sectorId,
+            sectorName: loc.sectorName,
+            latitude: Number(lat.toFixed(6)),
+            longitude: Number(lng.toFixed(6)),
+            weight: Number((Math.random() * 8 + 1).toFixed(1)),
+            confidence: Math.floor(Math.random() * 90) + 10,
+            vehicleRef: mockUUID,
+            reportDate
+          });
         }
-        
-        await Promise.all(promises);
       }
       else if (testScenario === "degradation") {
         // Create an initial pothole, then have 3 vehicles report it with increasing weight
